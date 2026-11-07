@@ -1,0 +1,31 @@
+# Environment / Python
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.env
+.env.*
+*.log
+
+# Build
+dist/
+build/
+
+# Misc
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local
+uv.lock.bak
+sync.out
+x
+run.out

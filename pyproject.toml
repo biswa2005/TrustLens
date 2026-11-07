@@ -1,0 +1,16 @@
+[project]
+name = "trustlens"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { email = "bbiswasrup2005@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.162.2",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[tool.uv]
+package = false
