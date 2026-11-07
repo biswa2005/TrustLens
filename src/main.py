@@ -8,3 +8,8 @@ __all__ = ["app"]
 @app.get("/")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/health")
+def health_check() -> dict[str, str]:
+    return {"status": "ok"}
