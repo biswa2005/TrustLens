@@ -1,0 +1,115 @@
+{
+  "info": {
+    "name": "TrustLens Web3 Threat Reports",
+    "description": "End-to-end tests for Module 6 decentralized threat intelligence.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/"
+      }
+    },
+    {
+      "name": "Create Threat Report",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.environment.set('report_id', json.report_id);",
+              "pm.environment.set('commitment', json.commitment);",
+              "pm.environment.set('on_chain_report_id', json.on_chain_report_id);",
+              "pm.environment.set('tx_hash', json.tx_hash);",
+              "pm.test('created with tx hash', () => pm.expect(json.tx_hash).to.not.be.null);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reporter_pseudonym\": \"analyst-1\",\n  \"indicators\": {\n    \"domain\": \"evil-paypal.com\",\n    \"url\": \"http://evil-paypal.example/login\"\n  },\n  \"campaign_summary\": \"credential harvesting phishing\",\n  \"incident_summary\": \"users redirected to fake login\",\n  \"evidence_refs\": [\"sha256:exampleevidence\"]\n}"
+        },
+        "url": "{{base_url}}/threat-reports"
+      }
+    },
+    {
+      "name": "Get Report",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/threat-reports/{{report_id}}"
+      }
+    },
+    {
+      "name": "Verify Integrity (stored commitment)",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/threat-reports/{{report_id}}/verify"
+      }
+    },
+    {
+      "name": "Verify Integrity (supplied commitment)",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/threat-reports/{{report_id}}/verify?commitment={{commitment}}"
+      }
+    },
+    {
+      "name": "Revise Report",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"indicators\": {\n    \"domain\": \"evil-paypal.com\",\n    \"url\": \"http://evil-paypal.example/login\"\n  },\n  \"campaign_summary\": \"updated analysis\",\n  \"incident_summary\": \"users redirected to fake login\",\n  \"evidence_refs\": [\"sha256:exampleevidence\"]\n}"
+        },
+        "url": "{{base_url}}/threat-reports/{{report_id}}/revise"
+      }
+    },
+    {
+      "name": "Dispute Report",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"possible false positive\",\n  \"disputant\": \"reviewer-2\"\n}"
+        },
+        "url": "{{base_url}}/threat-reports/{{report_id}}/dispute"
+      }
+    },
+    {
+      "name": "Validate Report",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"verdict\": true,\n  \"validator\": \"validator-1\"\n}"
+        },
+        "url": "{{base_url}}/threat-reports/{{report_id}}/validate"
+      }
+    },
+    {
+      "name": "Provenance",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/threat-reports/{{report_id}}/provenance"
+      }
+    },
+    {
+      "name": "On-chain Public View",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/threat-reports/{{report_id}}/onchain"
+      }
+    }
+  ]
+}

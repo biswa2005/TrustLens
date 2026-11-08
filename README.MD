@@ -57,6 +57,29 @@ A transparent, tamper-evident registry for verified security intelligence.
 *   Maintains a verifiable reporting history for independent integrity checks and provenance tracking.
 
 ---
+## Web3 Verification Evidence
+* **Contract (registry):** `ThreatRegistry.sol`
+* **Network:** Hardhat local blockchain (chainId 31337) — reproducible local setup.
+* **Contract address:** `0x5FbDB2315678afecb367f032d93F642f64180aa3`
+* **Deployment transaction:** `0x13a7dcd9d66aa13bda38252d6c84d6cc53455fe47707e359a6554a655829c558` (block 1)
+* **Verification evidence file:** `contracts/deployments/localhost.json`
+
+### On-chain integrity scope
+The blockchain record proves **integrity and history only**, never the truth of a report. Raw URLs, domains, incident text, evidence references, and PII stay entirely off-chain in PostgreSQL/SQLite. Only the 32-byte SHA-256 commitment of the canonical (salted) report is recorded.
+
+### Independent integrity check
+`GET /threat-reports/{id}/verify?commitment=<hex>` (or omit `commitment` to use the stored off-chain commitment) fetches the on-chain commitment and returns whether it matches, with the supporting transaction references. Lifecycle events are exposed via `GET /threat-reports/{id}/provenance`.
+
+### Running the Web3 stack locally
+```bash
+cd contracts
+npm install
+npx hardhat node                # Terminal 1
+npx hardhat run scripts/deploy.js --network localhost   # Terminal 2
+```
+Copy `contracts/deployments/localhost.json` values into `.env` (`CONTRACT_ADDRESS`, etc.), or run against Sepolia by setting `SEPOLIA_RPC_URL` and `PRIVATE_KEY` and using `--network sepolia`.
+
+---
 
 ## 🚀 Advanced Extensions Implemented
 
@@ -114,8 +137,7 @@ Boilerplate FastAPI project managed with `uv`.
 
 ```bash
 uv sync
-uv run -s start
-```
+uv run uvicorn src.main:app --host 0.0.0.0 --port 8000```
 
 Then open http://localhost:8000.
 
