@@ -1,0 +1,60 @@
+services:
+  fetcher:
+    build:
+      context: .
+      dockerfile: Dockerfile.fetcher
+    cap_drop: [ALL]
+    cap_add: [NET_ADMIN, SETUID, SETGID, SETPCAP]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: 1.0
+    pids_limit: 128
+    networks: [fetch, public]
+    environment:
+      FETCHER_TOKEN: ${FETCHER_TOKEN}
+    ports: ["127.0.0.1:8001:8001"]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/healthz', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: trustlens
+      POSTGRES_USER: trustlens
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: [pgdata:/var/lib/postgresql/data, ./db/init:/docker-entrypoint-initdb.d:ro]
+    networks: [data]
+    ports: ["127.0.0.1:55432:5432"]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U trustlens -d trustlens]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    command: [sh, -c, 'exec redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}"']
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes: [redisdata:/data]
+    networks: [data]
+    ports: ["127.0.0.1:6379:6379"]
+    healthcheck:
+      test: [CMD-SHELL, 'redis-cli -a "$${REDIS_PASSWORD}" ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+networks:
+  public: {}
+  # PostgreSQL and Redis share this bridge; the fetcher is not attached.
+  # It must be non-internal so loopback-published ports are reachable by the
+  # host-run API on Windows and other local development hosts.
+  data: {}
+  fetch: {}
+volumes:
+  pgdata: {}
+  redisdata: {}
+

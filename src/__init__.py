@@ -1,10 +1,9 @@
 ﻿def main() -> None:
-    import os
     import sys
+    from pathlib import Path
 
-    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-    import uvicorn
-    from main import app
+    from links.services.runtime import run_uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    run_uvicorn("main:app", host="0.0.0.0", port=8000)

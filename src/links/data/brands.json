@@ -1,0 +1,16 @@
+{
+  "paypal": ["paypal.com"], "google": ["google.com"], "microsoft": ["microsoft.com"], "amazon": ["amazon.com"], "apple": ["apple.com"],
+  "facebook": ["facebook.com"], "meta": ["meta.com"], "instagram": ["instagram.com"], "whatsapp": ["whatsapp.com"], "netflix": ["netflix.com"],
+  "youtube": ["youtube.com"], "yahoo": ["yahoo.com"], "linkedin": ["linkedin.com"], "tiktok": ["tiktok.com"], "reddit": ["reddit.com"],
+  "github": ["github.com"], "gitlab": ["gitlab.com"], "dropbox": ["dropbox.com"], "adobe": ["adobe.com"], "salesforce": ["salesforce.com"],
+  "zoom": ["zoom.us"], "slack": ["slack.com"], "discord": ["discord.com"], "roblox": ["roblox.com"], "steam": ["steampowered.com", "steamcommunity.com"],
+  "ebay": ["ebay.com"], "walmart": ["walmart.com"], "target": ["target.com"], "chase": ["chase.com"], "bankofamerica": ["bankofamerica.com"],
+  "wellsfargo": ["wellsfargo.com"], "citi": ["citi.com"], "capitalone": ["capitalone.com"], "americanexpress": ["americanexpress.com"], "discover": ["discover.com"],
+  "visa": ["visa.com"], "mastercard": ["mastercard.com"], "venmo": ["venmo.com"], "zelle": ["zellepay.com"], "stripe": ["stripe.com"],
+  "coinbase": ["coinbase.com"], "binance": ["binance.com"], "kraken": ["kraken.com"], "metamask": ["metamask.io"], "ethereum": ["ethereum.org"],
+  "sbi": ["onlinesbi.sbi", "sbi.co.in"], "hdfc": ["hdfcbank.com"], "icici": ["icicibank.com"], "axis": ["axisbank.com"], "barclays": ["barclays.co.uk"],
+  "hsbc": ["hsbc.com"], "lloyds": ["lloydsbank.com"], "natwest": ["natwest.com"], "monzo": ["monzo.com"], "wise": ["wise.com"],
+  "airbnb": ["airbnb.com"], "uber": ["uber.com"], "lyft": ["lyft.com"], "spotify": ["spotify.com"], "disney": ["disney.com"],
+  "ikea": ["ikea.com"], "fedex": ["fedex.com"], "ups": ["ups.com"], "dhl": ["dhl.com"], "usps": ["usps.com"],
+  "icloud": ["icloud.com"], "outlook": ["outlook.com"], "microsoft365": ["microsoft.com"], "openai": ["openai.com"]
+}

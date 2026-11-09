@@ -1,0 +1,7 @@
+[
+ {"input":"https://www.google.com","category":"benign_known_good","expected_classes":["low","inconclusive"],"mode":"offline","fetch":false,"rationale":"Known official domain; low requires external reputation coverage."},
+ {"input":"https://google.com/search?utm_source=mail&utm_medium=tracking&utm_campaign=long_campaign_token_123","category":"benign_tracking","expected_classes":["low","inconclusive","suspicious"],"mode":"offline","fetch":false,"rationale":"Long tracking query on an official domain should not independently prove maliciousness."},
+ {"input":"https://student-portfolio-2026.com","category":"new_legitimate_domain","expected_classes":["low","inconclusive","suspicious"],"mode":"offline","fetch":false,"rationale":"Domain age alone is weak and does not imply High Risk."},
+ {"input":"https://malik.github.io","category":"shared_hosting","expected_classes":["low","inconclusive","suspicious"],"mode":"offline","fetch":false,"rationale":"Private suffix must be retained; shared hosting is not automatically dampened as a trusted site."},
+ {"input":"https://ordinary-business-domain.com","category":"benign_unlisted","expected_classes":["low","inconclusive","suspicious"],"mode":"offline","fetch":false,"rationale":"An unlisted ordinary domain must not be classified High from URL text alone."}
+]
