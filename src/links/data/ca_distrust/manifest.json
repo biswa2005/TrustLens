@@ -1,0 +1,17 @@
+{
+  "version": "trustlens-ca-distrust-2026-11-09",
+  "records": [
+    {
+      "id": "em-dv-tls-ca-g3b",
+      "entity": "eMudhra BV",
+      "classification": "compromised",
+      "source_url": "https://bugzilla.mozilla.org/show_bug.cgi?id=2083449",
+      "certificate_url": "https://ctlogs.dev/ca/42c4accd12c4f59597925e1a08a7a90102608543809308d50ec427e118ba1493/cert.pem",
+      "source_record": "Mozilla Bugzilla 2083449: CCADB A012302, serial a4aee678f23362b4c0e460b772f214, SHA-256 42C4ACCD12C4F59597925E1A08A7A90102608543809308D50EC427E118BA1493",
+      "retrieved_on": "2026-11-09",
+      "cert_file": "certs/em-dv-tls-ca-g3b.pem",
+      "expected_cert_sha256": "42C4ACCD12C4F59597925E1A08A7A90102608543809308D50EC427E118BA1493",
+      "scope": { "type": "all" }
+    }
+  ]
+}

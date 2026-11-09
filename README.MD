@@ -1,146 +1,70 @@
-# TrustLens
-# 🛡️ TrustLens: AI-Powered Web Threat Detection & Digital Trust Intelligence
+# TrustLens Module 1
 
-## 📖 Overview
-The internet's growing complexity has led to highly sophisticated digital threats, from homograph phishing domains to compromised Certificate Authorities and social engineering scams. 
+TrustLens Module 1 accepts a URL and returns a rule-based risk report. The API runs on the host with Python. Docker Compose runs the isolated fetcher, PostgreSQL 16 with `pgvector`, and Redis 7. Redis is an indicator lookup store, not an analysis check.
 
-**TrustLens** is an intelligent digital security platform that combines **Artificial Intelligence, Cybersecurity, and Web3** to investigate suspicious digital content, analyze website security, and provide evidence-based security assessments. 
+## Run locally
 
-Built with a "Zero-Friction" philosophy, the platform features a centralized investigative backend powering multiple interfaces: a comprehensive Web Dashboard, a real-time Chrome Extension for pre-navigation protection, and a Mobile-friendly Chatbot for instant message scanning.
+1. Copy `.env.example` to `.env` and set `POSTGRES_PASSWORD` and `REDIS_PASSWORD` to the same values used by Compose. Set `DATABASE_URL`, `TEST_DATABASE_URL`, and `REDIS_URL` to the host-published ports in the Compose file (`127.0.0.1:55432` and `127.0.0.1:6379` by default). Keep the test database named `trustlens_test`; integration tests refuse to use a database without a `_test` suffix. Set optional Safe Browsing and VirusTotal API keys if available.
+2. Start the supporting services:
 
----
+   ```powershell
+   docker compose up --build -d
+   ```
 
-## 🏗️ Architecture & Ecosystem
+3. Install dependencies and run the API on the host:
 
-*   **TrustLens Core (Backend API):** The central nervous system handling threat correlation, external intelligence queries, active non-intrusive scanning, and Web3 interactions.
-*   **TrustLens Extension (Browser):** A Manifest V3 Chrome extension providing real-time, pre-navigation blocking and on-page DOM scanning.
-*   **TrustLens Dashboard (Web):** A central hub for deep-dive investigations, raw URL/message submissions, and viewing the Decentralized Threat Intelligence ledger.
-*   **TrustLens Mobile (Chatbot/PWA):** Frictionless checking for mobile users to forward suspicious messages, QR codes, or links via native share sheets or chat interfaces.
+   ```powershell
+   uv sync --dev
+   uv run python run.py
+   ```
 
----
+The API listens on `http://127.0.0.1:8000`. The API is intentionally not a Compose service. PostgreSQL and Redis share a dedicated Compose bridge that the fetcher does not join; their host ports and the fetcher port are loopback-bound for local development. `/healthz` checks PostgreSQL; it returns 503 if PostgreSQL is not configured or unavailable. The fetcher also exposes `/healthz` on port 8001.
 
-## ✨ Core Features
+On Windows, `run.py` starts Uvicorn's server coroutine with an explicit Selector event loop. This bypasses Uvicorn's default Proactor loop, which Psycopg's async connection pool cannot use.
 
-### 1. Intelligent URL and Website Analysis
-Submit any suspicious URL or domain for a comprehensive investigation.
-*   Normalizes and inspects URLs for domain spoofing, typosquatting, and deceptive character substitutions.
-*   Examines redirect chains and embedded parameters.
-*   Checks domain reputation against authoritative threat intelligence sources.
+## Create the database schema
 
-### 2. TLS Certificate and Web Trust Analysis
-Validates the cryptographic trust infrastructure of any submitted URL.
-*   Verifies domain identity, Subject Alternative Names (SANs), and certificate expiration.
-*   Inspects the Issuing Certificate Authority, certificate chains, and revocation status.
-*   Checks Certificate Transparency logs and flags known compromised CAs or weak signature algorithms.
+PostgreSQL initializes the `vector` extension on first creation of its data volume. The API applies SQL migrations during startup, including the report, cache, usage-counter, and migration tables. Start PostgreSQL before the API. If a volume was initialized before the init script was added, the migration still creates the extension idempotently.
 
-### 3. AI-Powered Scam and Message Analysis
-Paste suspicious emails, SMS messages, or social media communications for AI-driven intent analysis.
-*   Identifies urgency-based manipulation, payment requests, and impersonation attempts.
-*   Extracts embedded URLs, emails, and phone numbers for correlation.
-*   Provides evidence-grounded explanations of risk without treating urgent language as definitive proof of fraud.
+## Import URLhaus manually
 
-### 4. Intelligent Threat Correlation
-Connects the dots between isolated incidents to uncover broader fraud campaigns.
-*   Identifies reused infrastructure, shared domains, and recurring impersonation patterns across multiple user reports.
-*   Uses AI to summarize relationships while backing connections with deterministic technical evidence.
+The importer is a one-time setup command. It is never started by the API, a scheduler, or Compose. After Redis is running and the local `REDIS_URL` is configured, run:
 
-### 5. Website Security Assessment
-Performs safe, non-intrusive vulnerability checks on publicly accessible websites.
-*   Inspects missing/misconfigured security headers and weak TLS configurations.
-*   Detects mixed-content issues and exposed sensitive endpoints via passive inspection.
-*   Provides actionable remediation recommendations and severity classifications.
-
-### 6. Decentralized Threat Intelligence (Web3)
-A transparent, tamper-evident registry for verified security intelligence.
-*   Records cryptographic commitments (hashes) of threat reports on-chain.
-*   Ensures raw URLs and sensitive user data remain completely off-chain.
-*   Maintains a verifiable reporting history for independent integrity checks and provenance tracking.
-
----
-## Web3 Verification Evidence
-* **Contract (registry):** `ThreatRegistry.sol`
-* **Network:** Hardhat local blockchain (chainId 31337) — reproducible local setup.
-* **Contract address:** `0x5FbDB2315678afecb367f032d93F642f64180aa3`
-* **Deployment transaction:** `0x13a7dcd9d66aa13bda38252d6c84d6cc53455fe47707e359a6554a655829c558` (block 1)
-* **Verification evidence file:** `contracts/deployments/localhost.json`
-
-### On-chain integrity scope
-The blockchain record proves **integrity and history only**, never the truth of a report. Raw URLs, domains, incident text, evidence references, and PII stay entirely off-chain in PostgreSQL/SQLite. Only the 32-byte SHA-256 commitment of the canonical (salted) report is recorded.
-
-### Independent integrity check
-`GET /threat-reports/{id}/verify?commitment=<hex>` (or omit `commitment` to use the stored off-chain commitment) fetches the on-chain commitment and returns whether it matches, with the supporting transaction references. Lifecycle events are exposed via `GET /threat-reports/{id}/provenance`.
-
-### Running the Web3 stack locally
-```bash
-cd contracts
-npm install
-npx hardhat node                # Terminal 1
-npx hardhat run scripts/deploy.js --network localhost   # Terminal 2
+```powershell
+uv run python scripts/import_urlhaus.py
 ```
-Copy `contracts/deployments/localhost.json` values into `.env` (`CONTRACT_ADDRESS`, etc.), or run against Sepolia by setting `SEPOLIA_RPC_URL` and `PRIVATE_KEY` and using `--network sepolia`.
 
----
+By default, this reads `data/feeds/urlhaus.csv`. To use another local dump, pass its path directly; no container mount is needed because the importer runs on the host:
 
-## 🚀 Advanced Extensions Implemented
+```powershell
+uv run python scripts/import_urlhaus.py --file "C:\path\to\urlhaus.csv"
+```
 
-Beyond the core requirements, this project integrates several advanced capabilities to maximize user protection and accessibility:
+The importer validates and stages a new Redis generation, then switches the active-generation pointer only after a complete successful import. Active and historical records remain separate. Do not submit scanned URLs to URLhaus; analysis performs local Redis lookups only.
 
-*   **Browser Extension (Pre-Navigation Check):** Automatically intercepts and scans links before the browser resolves them.
-*   **Real-Time Phishing Protection:** Actively monitors the DOM via `IntersectionObserver` to flag malicious links during scrolling.
-*   **QR Code Scam Detection:** Allows users to upload or scan QR codes to extract and investigate the underlying destination.
-*   **Screenshot-Based Impersonation Detection:** Analyzes uploaded images to extract text and URLs for scam verification.
-*   **Email Security Analysis:** Deep inspection of email headers and content for sophisticated phishing attempts.
-*   **Domain Monitoring:** Alerts for suspicious certificate issuance.
-*   **Lookalike & Homoglyph Detection:** Advanced string comparison to catch sophisticated visual domain spoofing.
-*   **Compromised CA Monitoring:** Real-time tracking of distrusted or compromised certificate authorities.
-*   **Automated Audits:** Continuous, non-intrusive TLS and security header assessments.
-*   **Threat Intelligence Sharing APIs:** RESTful endpoints allowing external security tools to pull risk data and push new threat indicators programmatically.
-*   **Community-Based Reporting:** A collaborative validation system for submitted scams.
-*   **Organization-Level Dashboard:** A high-level view for monitoring security postures and enterprise-wide threat exposure.
+## API
 
----
+- `GET /`, `GET /health`, `GET /healthz`
+- `POST /api/v1/analyse/url`, for example:
 
-## 📊 Risk Classification System
+  ```json
+  { "url": "https://example.com", "skip_third_party_reputation": false }
+  ```
 
-All investigations strictly adhere to a standardized grading scale to ensure clarity:
-1.  **Low Risk:** No significant malicious indicators identified.
-2.  **Suspicious:** One or more indicators require further investigation.
-3.  **High Risk:** Multiple significant indicators suggest a substantial threat.
-4.  **Confirmed Malicious:** Supported by authoritative threat intelligence or validated evidence.
-5.  **Inconclusive:** Insufficient data or unavailable verification sources.
+- `GET /api/v1/reports/{report_id}` retrieves a persisted report until its configured retention period expires.
 
-*(Note: The system never treats the absence of known threats as proof that a website is 100% safe.)*
+There are eleven registered checks: `normalise`, `lexical`, `brand_impersonation`, `redirect_chain`, `password_form`, `dns`, `rdap`, `intel_safebrowsing`, `intel_virustotal`, `intel_urlhaus`, and `tls_certificate`. TLS adds evidence and report details, but the original ten checks remain the confidence and Low-Risk coverage gates. Skipping third-party reputation skips Safe Browsing and VirusTotal; it does not skip URLhaus.
 
----
+For HTTPS on port 443, `tls_certificate` asks the isolated fetcher to perform a bounded TLS handshake and returns certificate, hostname, public trust-store, and configuration findings. The host and fetcher share `FETCHER_TOKEN`; configure the same long random value in `.env` and recreate the fetcher after changing it. The fetcher holds this one access token and has no access to database or Redis credentials. The probe uses `VERIFY_NONE` only behind the fetcher's public-IP guard; ordinary page fetching continues to verify certificates.
 
-## 🛠️ Technology Stack
+## Risk and evidence rules
 
-*   **Backend:** Python (FastAPI), OpenSSL, native DNS analysis.
-*   **Frontend/Dashboard:** Next.js, React, Tailwind CSS, TypeScript.
-*   **Browser Extension:** Manifest V3, JavaScript, Chrome APIs.
-*   **AI/LLM:** [Insert Model here, e.g., OpenAI API / Gemini / Local RAG system]
-*   **Web3:** Solidity (Smart Contracts), Ethers.js, EVM-compatible Testnet (e.g., Sepolia).
-*   **Threat Intel APIs:** Google Safe Browsing, VirusTotal, crt.sh (Certificate Transparency).
-*   **Database:** PostgreSQL (Relational Data), Redis (Caching/Rate Limiting).
+Risk is based on grouped independent evidence, not a numeric score. Safe Browsing exact URL/host matches, active URLhaus exact URL/host matches, and VirusTotal URL/host reports with at least five malicious engines after excluding Google Safe Browsing can confirm maliciousness. Historical URLhaus evidence cannot confirm; VirusTotal registered-domain evidence is capped at Moderate. Strong evidence from independent classes is required for High Risk. Low Risk requires at least seven successful checks and at least one successful external reputation source; a local feed miss is not proof of safety.
 
----
+## Verification status and scope
 
-## 🔒 Security & Privacy Notice
+See [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md) and [context.md](context.md) for component-by-component status and the latest recorded test evidence. `docker compose config --quiet` passes. The current fetcher image was rebuilt from the working tree and passed isolation checks on 2026-11-09: PID 1 runs as UID 10001 with `CapEff=0`, no Docker socket, private/DB/Redis connections fail, IPv6 egress is unreachable, and loopback health returns 200. PostgreSQL and Redis report healthy with loopback ports 55432 and 6379 published; a real URLhaus import and active/historical lookups were verified. The latest recorded full suite reported 472 passed, 1 skipped, and 2 warnings; the PostgreSQL integration test was separately run against the configured disposable `_test` database and passed. A current-code API POST returned 200, but its response body and GET-by-ID persistence have not yet been verified.
 
-**TrustLens is built with security-first principles:**
-*   **Passive Scanning Only:** The platform does not exploit vulnerabilities, execute malicious scripts, or perform intrusive active scanning.
-*   **SSRF Protection:** Strict request limits, URL parsing, and IP validation prevent server-side request forgery during URL inspection.
-*   **Data Minimization:** No personal information, passwords, or seed phrases are ever requested or stored. All decentralized reporting utilizes cryptographic hashing to preserve privacy.
-Boilerplate FastAPI project managed with `uv`.
+TLS scope and limitations: only port 443 is probed; IPv6-only authorities currently fail closed because the probe reconstructs a bracketless URL before the SSRF guard, so they produce no certificate evidence; OCSP uses authenticated direct-issuer staples only, with active OCSP, delegated responders, and CRLs out of scope; CT checks parse embedded SCT structure only, with SCT signature validation and log monitoring out of scope; CA distrust matches use only verified records shipped in `src/links/data/ca_distrust/` (the versioned dataset currently contains one Mozilla-documented compromised eMudhra intermediate); and the certifi bundle may differ from a browser or OS trust store. `valid` means the certificate chain and hostname passed these checks; it does not mean the website is safe. The small distrust dataset is not comprehensive CA coverage.
 
-## Run
-
-```bash
-uv sync
-python run.py --host 0.0.0.0 --port 8000```
-
-Then open http://localhost:8000.
-
-## Health
-
-- `GET /` -> `{"status": "ok"}`
+Other limitations include static HTML/redirect inspection, a curated brand list, provider quotas, incomplete corpora, and no full differential browser-parser oracle. Module 5, dashboard/frontend work, embeddings, and LLM explanations remain outside this implementation scope.

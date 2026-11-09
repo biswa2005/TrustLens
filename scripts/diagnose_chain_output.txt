@@ -1,0 +1,190 @@
+C:\Users\malik\OneDrive\Desktop\trustlens\TrustLens\src\links\services\tls\trust_store.py:15: CryptographyDeprecationWarning: Parsed a serial number which wasn't positive (i.e., it was negative or zero), which is disallowed by RFC 5280. Loading this certificate will cause an exception in a future release of cryptography.
+  self.certs = tuple(x509.load_pem_x509_certificates(pem))
+
+=== example.com ===
+probe_ok: True; error_kind: None; detail: None
+  received[0]
+    subject: CN=example.com
+    issuer: CN=Cloudflare TLS Issuing ECC CA 3,O=SSL Corporation,C=US
+    sha256: 85ca6ab068e9bcce88b6c4aa3c47f7d17228134a457f870d3800e6223a0df07a
+    AKI: 8303fde7f6f54a4d1541f4ed2216d3320a3eca66
+    SKI: <absent>
+    is_ca: False
+    not_before: 2026-09-26T22:49:11+00:00
+    not_after: 2026-12-25T22:56:35+00:00
+  received[1]
+    subject: CN=Cloudflare TLS Issuing ECC CA 3,O=SSL Corporation,C=US
+    issuer: CN=SSL.com TLS Transit ECC CA R2,O=SSL Corporation,C=US
+    sha256: f15f29abef73aa4dd9ab754baeae3685bdd3874b46b525071177628685718026
+    AKI: 32a2c7d8588bff7fc03cf2556933eccecc1fbc97
+    SKI: 8303fde7f6f54a4d1541f4ed2216d3320a3eca66
+    is_ca: True
+    not_before: 2025-05-29T19:49:45+00:00
+    not_after: 2035-05-27T19:49:44+00:00
+  received[2]
+    subject: CN=SSL.com TLS Transit ECC CA R2,O=SSL Corporation,C=US
+    issuer: CN=SSL.com TLS ECC Root CA 2022,O=SSL Corporation,C=US
+    sha256: 5d1bc399274e649e1c72697de91a54ad725088c5221cb61e17ee9c290bc42a92
+    AKI: 898f2fa3e82ba014547bf356b8265f67380b9cd0
+    SKI: 32a2c7d8588bff7fc03cf2556933eccecc1fbc97
+    is_ca: True
+    not_before: 2022-10-21T17:02:23+00:00
+    not_after: 2037-10-17T17:02:22+00:00
+  received[3]
+    subject: CN=SSL.com TLS ECC Root CA 2022,O=SSL Corporation,C=US
+    issuer: CN=AAA Certificate Services,O=Comodo CA Limited,L=Salford,ST=Greater Manchester,C=GB
+    sha256: ba06d3d3e348fce7478cc84b422d0e638e9e221ef1a0b53adc14cc70e04b8ab8
+    AKI: a0110a233e96f107ece2af29ef82a57fd030a4b4
+    SKI: 898f2fa3e82ba014547bf356b8265f67380b9cd0
+    is_ca: True
+    not_before: 2025-08-01T00:00:00+00:00
+    not_after: 2028-12-31T23:59:59+00:00
+  _order_path:
+    path[0]: CN=example.com [85ca6ab068e9bcce88b6c4aa3c47f7d17228134a457f870d3800e6223a0df07a]
+    path[1]: CN=Cloudflare TLS Issuing ECC CA 3,O=SSL Corporation,C=US [f15f29abef73aa4dd9ab754baeae3685bdd3874b46b525071177628685718026]
+    path[2]: CN=SSL.com TLS Transit ECC CA R2,O=SSL Corporation,C=US [5d1bc399274e649e1c72697de91a54ad725088c5221cb61e17ee9c290bc42a92]
+    path[3]: CN=SSL.com TLS ECC Root CA 2022,O=SSL Corporation,C=US [ba06d3d3e348fce7478cc84b422d0e638e9e221ef1a0b53adc14cc70e04b8ab8]
+  top_subject: CN=SSL.com TLS ECC Root CA 2022,O=SSL Corporation,C=US
+  top_issuer: CN=AAA Certificate Services,O=Comodo CA Limited,L=Salford,ST=Greater Manchester,C=GB
+  top_self_issued: False
+  top_fingerprint_in_trust_store: False
+  top_issuer_der_in_by_subject: False
+  top_same_spki_trust_store_subjects: ['CN=SSL.com TLS ECC Root CA 2022,O=SSL Corporation,C=US']
+  chain_status: valid_trusted; evidence: {'reason': 'ok'}
+  certifi_version: 2026.10.23
+
+=== google.com ===
+probe_ok: True; error_kind: None; detail: None
+  received[0]
+    subject: CN=*.google.com
+    issuer: CN=WE2,O=Google Trust Services,C=US
+    sha256: b0c47fc75d7757cb455d9f3fd719500d364dc6f40738baa70fadf95720b070b7
+    AKI: 75bec477ae89f644377dcfb1681f1d1aebdc3459
+    SKI: 163671dabb5fdf029e610430db8c5fc65d893f16
+    is_ca: False
+    not_before: 2026-10-07T19:07:42+00:00
+    not_after: 2026-12-30T19:07:41+00:00
+  received[1]
+    subject: CN=WE2,O=Google Trust Services,C=US
+    issuer: CN=GTS Root R4,O=Google Trust Services LLC,C=US
+    sha256: 9c3f2fd11c57d7c649ad5a0932c0f0d29756f6a0a1c74c43e1e89a62d64cd320
+    AKI: 804cd6eb74ff4936a3d5d8fcb53ec56af0941d8c
+    SKI: 75bec477ae89f644377dcfb1681f1d1aebdc3459
+    is_ca: True
+    not_before: 2023-12-13T09:00:00+00:00
+    not_after: 2029-02-20T14:00:00+00:00
+  received[2]
+    subject: CN=GTS Root R4,O=Google Trust Services LLC,C=US
+    issuer: CN=GlobalSign Root CA,OU=Root CA,O=GlobalSign nv-sa,C=BE
+    sha256: 76b27b80a58027dc3cf1da68dac17010ed93997d0b603e2fadbe85012493b5a7
+    AKI: 607b661a450d97ca89502f7d04cd34a8fffcfd4b
+    SKI: 804cd6eb74ff4936a3d5d8fcb53ec56af0941d8c
+    is_ca: True
+    not_before: 2023-11-15T03:43:21+00:00
+    not_after: 2028-01-28T00:00:42+00:00
+  _order_path:
+    path[0]: CN=*.google.com [b0c47fc75d7757cb455d9f3fd719500d364dc6f40738baa70fadf95720b070b7]
+    path[1]: CN=WE2,O=Google Trust Services,C=US [9c3f2fd11c57d7c649ad5a0932c0f0d29756f6a0a1c74c43e1e89a62d64cd320]
+    path[2]: CN=GTS Root R4,O=Google Trust Services LLC,C=US [76b27b80a58027dc3cf1da68dac17010ed93997d0b603e2fadbe85012493b5a7]
+  top_subject: CN=GTS Root R4,O=Google Trust Services LLC,C=US
+  top_issuer: CN=GlobalSign Root CA,OU=Root CA,O=GlobalSign nv-sa,C=BE
+  top_self_issued: False
+  top_fingerprint_in_trust_store: False
+  top_issuer_der_in_by_subject: False
+  top_same_spki_trust_store_subjects: ['CN=GTS Root R4,O=Google Trust Services LLC,C=US']
+  chain_status: valid_trusted; evidence: {'reason': 'ok'}
+  certifi_version: 2026.10.23
+
+=== github.com ===
+probe_ok: True; error_kind: None; detail: None
+  received[0]
+    subject: CN=github.com
+    issuer: CN=Sectigo Public Server Authentication CA DV E36,O=Sectigo Limited,C=GB
+    sha256: 7dc4d85cf1e310971225bc9a9257679043a243d70a3cc2a91cc5d389892c2776
+    AKI: 1799a804c16fe42d70a80a103d03d3e91ab82663
+    SKI: 8cb02a1eaeee865d000135b1e58b6923a53e3c71
+    is_ca: False
+    not_before: 2026-10-30T00:00:00+00:00
+    not_after: 2027-01-27T23:59:59+00:00
+  received[1]
+    subject: CN=Sectigo Public Server Authentication CA DV E36,O=Sectigo Limited,C=GB
+    issuer: CN=Sectigo Public Server Authentication Root E46,O=Sectigo Limited,C=GB
+    sha256: 873f0ba80e3ac222656dfd04158cc15c2927d42d5d05f01dee4a47eb43a916df
+    AKI: d122da4c59f14b5f2638aa9dd6eeeb0dc3fba961
+    SKI: 1799a804c16fe42d70a80a103d03d3e91ab82663
+    is_ca: True
+    not_before: 2021-03-22T00:00:00+00:00
+    not_after: 2036-03-21T23:59:59+00:00
+  received[2]
+    subject: CN=Sectigo Public Server Authentication Root E46,O=Sectigo Limited,C=GB
+    issuer: CN=USERTrust ECC Certification Authority,O=The USERTRUST Network,L=Jersey City,ST=New Jersey,C=US
+    sha256: ea6b89ed6907a209ff9188676fb164e7aced894b8996dfbe5ce5bbcc22de4ddd
+    AKI: 3ae10986d4cf19c29676744976dce035c663639a
+    SKI: d122da4c59f14b5f2638aa9dd6eeeb0dc3fba961
+    is_ca: True
+    not_before: 2021-03-22T00:00:00+00:00
+    not_after: 2038-01-18T23:59:59+00:00
+  _order_path:
+    path[0]: CN=github.com [7dc4d85cf1e310971225bc9a9257679043a243d70a3cc2a91cc5d389892c2776]
+    path[1]: CN=Sectigo Public Server Authentication CA DV E36,O=Sectigo Limited,C=GB [873f0ba80e3ac222656dfd04158cc15c2927d42d5d05f01dee4a47eb43a916df]
+    path[2]: CN=Sectigo Public Server Authentication Root E46,O=Sectigo Limited,C=GB [ea6b89ed6907a209ff9188676fb164e7aced894b8996dfbe5ce5bbcc22de4ddd]
+  top_subject: CN=Sectigo Public Server Authentication Root E46,O=Sectigo Limited,C=GB
+  top_issuer: CN=USERTrust ECC Certification Authority,O=The USERTRUST Network,L=Jersey City,ST=New Jersey,C=US
+  top_self_issued: False
+  top_fingerprint_in_trust_store: False
+  top_issuer_der_in_by_subject: True
+  top_same_spki_trust_store_subjects: ['CN=Sectigo Public Server Authentication Root E46,O=Sectigo Limited,C=GB']
+  chain_status: valid_trusted; evidence: {'reason': 'ok'}
+  certifi_version: 2026.10.23
+
+=== wikipedia.org ===
+probe_ok: True; error_kind: None; detail: None
+  received[0]
+    subject: CN=*.wikipedia.org
+    issuer: CN=YE2,O=Let's Encrypt,C=US
+    sha256: 14a7accb60f49ba0bedc0986c99750b37d25f0151312eb9d8f1a8a3f8748426f
+    AKI: b959f28ecf22f086d33748ff761418ba82d85587
+    SKI: e5f9fdcb556ca7c80e75c5fa750010bbe9c4e87f
+    is_ca: False
+    not_before: 2026-10-04T18:34:51+00:00
+    not_after: 2027-01-02T18:34:50+00:00
+  received[1]
+    subject: CN=YE2,O=Let's Encrypt,C=US
+    issuer: CN=Root YE,O=ISRG,C=US
+    sha256: 97658de8c68dfa98ace1e5028a63d54a1aae911b3e21471076c6850cd08cbab4
+    AKI: a3c8265a8ea14cd03563fc9b23c83aae56f34f56
+    SKI: b959f28ecf22f086d33748ff761418ba82d85587
+    is_ca: True
+    not_before: 2025-09-03T00:00:00+00:00
+    not_after: 2028-09-02T23:59:59+00:00
+  received[2]
+    subject: CN=Root YE,O=ISRG,C=US
+    issuer: CN=ISRG Root X2,O=Internet Security Research Group,C=US
+    sha256: 0fc0901cca2bae9e9fdbb02d50d02f1094f7b36672086991b9e897626dc485f0
+    AKI: 7c4296aede4b483bfa92f89e8ccf6d8ba9723795
+    SKI: a3c8265a8ea14cd03563fc9b23c83aae56f34f56
+    is_ca: True
+    not_before: 2026-05-13T00:00:00+00:00
+    not_after: 2032-09-02T23:59:59+00:00
+  received[3]
+    subject: CN=ISRG Root X2,O=Internet Security Research Group,C=US
+    issuer: CN=ISRG Root X1,O=Internet Security Research Group,C=US
+    sha256: ee5f7abd6981bb0255632cd8f49283451b4b18844d12040b44ee00f07b8fe2c6
+    AKI: 79b459e67bb6e5e40173800888c81a58f6e99b6e
+    SKI: 7c4296aede4b483bfa92f89e8ccf6d8ba9723795
+    is_ca: True
+    not_before: 2026-05-13T00:00:00+00:00
+    not_after: 2032-09-02T23:59:59+00:00
+  _order_path:
+    path[0]: CN=*.wikipedia.org [14a7accb60f49ba0bedc0986c99750b37d25f0151312eb9d8f1a8a3f8748426f]
+    path[1]: CN=YE2,O=Let's Encrypt,C=US [97658de8c68dfa98ace1e5028a63d54a1aae911b3e21471076c6850cd08cbab4]
+    path[2]: CN=Root YE,O=ISRG,C=US [0fc0901cca2bae9e9fdbb02d50d02f1094f7b36672086991b9e897626dc485f0]
+    path[3]: CN=ISRG Root X2,O=Internet Security Research Group,C=US [ee5f7abd6981bb0255632cd8f49283451b4b18844d12040b44ee00f07b8fe2c6]
+  top_subject: CN=ISRG Root X2,O=Internet Security Research Group,C=US
+  top_issuer: CN=ISRG Root X1,O=Internet Security Research Group,C=US
+  top_self_issued: False
+  top_fingerprint_in_trust_store: False
+  top_issuer_der_in_by_subject: True
+  top_same_spki_trust_store_subjects: ['CN=ISRG Root X2,O=Internet Security Research Group,C=US']
+  chain_status: valid_trusted; evidence: {'reason': 'ok'}
+  certifi_version: 2026.10.23

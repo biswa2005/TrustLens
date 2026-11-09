@@ -1,18 +1,29 @@
 # Environment / Python
 .venv/
+.uv-cache/
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 *.egg-info/
 .pytest_cache/
+.hypothesis/
+tests/**/scratch-*/
+tests/.pytest-temp/
+.pytest-local-*/
+.test-run-*/
+test-output-*/
 .mypy_cache/
 .ruff_cache/
 .coverage
 htmlcov/
 .env
 .env.*
+!.env.example
 *.log
+
+# Large local threat-feed downloads
+**/data/feeds/urlhaus.csv
 
 # Build
 dist/
