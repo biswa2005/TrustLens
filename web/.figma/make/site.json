@@ -1,0 +1,11 @@
+{
+  "title": "TrustLens — AI-Powered Web Threat Detection & Digital Trust Intelligence",
+  "description": "Investigate suspicious URLs, domains, and messages with explainable threat insights, risk assessments, and transparent digital trust tools.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
