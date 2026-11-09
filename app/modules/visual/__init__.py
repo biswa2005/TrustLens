@@ -1,0 +1,1 @@
+"""Visual website investigation module."""

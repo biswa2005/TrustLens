@@ -1,0 +1,1 @@
+"""QR investigation module."""

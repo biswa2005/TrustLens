@@ -1,0 +1,37 @@
+From: "SBI Accounts" <manager@sbi-verify.xyz>
+Reply-To: "SBI Support" <support@another-domain.example>
+Return-Path: <bounce@mailer.example>
+To: victim@example.com
+Subject: URGENT: Updated bank details required
+Date: Sat, 07 Nov 2026 10:00:00 +0000
+Message-ID: <abc123@sbi-verify.xyz>
+Authentication-Results: mx.example; spf=fail smtp.mailfrom=sbi-verify.xyz; dkim=fail; dmarc=fail
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="BOUNDARY"
+
+--BOUNDARY
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+Dear Customer,
+
+Our records show your account is suspended. Please update your bank details and
+confirm the urgent payment instruction using this link:
+http://sbi-verify.xyz/account/verify?token=123
+
+For security, reply with the OTP sent to your phone and confirm your password.
+This is a final notice from the managing director.
+
+Regards,
+SBI Accounts Team
+
+--BOUNDARY
+Content-Type: application/pdf; name="invoice_2026.pdf"
+Content-Disposition: attachment; filename="invoice_2026.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKJcOkw7zDtsOfCjIgMCBvYmoKPDwvTGVuZ3RoIDUgMCBSPj4Kc3RyZWFtCkJUCi9GMSAxMiBUZgp
+CjEwIDcwMCBUZCAoSW52b2ljZSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iagp0cmFpbGVyCjw8L1Jvb3QgMSAwIF
+I+PgolJUVPRgo=
+
+--BOUNDARY--

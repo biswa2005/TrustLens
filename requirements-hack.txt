@@ -1,0 +1,17 @@
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30
+pydantic>=2.9
+pydantic-settings>=2.5
+httpx>=0.27
+python-multipart>=0.0.12
+langgraph>=0.2.60
+langchain-core>=0.3.20
+huggingface_hub>=0.26
+dnspython>=2.6
+tldextract>=5.1
+Pillow>=10.4
+opencv-python-headless>=4.10
+numpy>=1.26
+beautifulsoup4>=4.12
+charset-normalizer>=3.3
+dkimpy>=1.1.5

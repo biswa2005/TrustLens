@@ -1,0 +1,438 @@
+{
+  "version": "1.0",
+  "notes": "Curated reference set for lookalike/impersonation checks. Official domains only. Add local reference screenshots under app/assets/brands/<slug>.png for visual comparison.",
+  "brands": [
+    {
+      "name": "PayPal",
+      "slug": "paypal",
+      "aliases": ["paypal", "pay pal"],
+      "domains": ["paypal.com", "paypal.me", "paypalobjects.com"],
+      "category": "payments",
+      "login_fields": ["email", "password"],
+      "login_paths": ["/signin", "/login", "/checkout"]
+    },
+    {
+      "name": "Amazon",
+      "slug": "amazon",
+      "aliases": ["amazon", "amazon india"],
+      "domains": ["amazon.com", "amazon.in", "amazon.co.uk", "amazonpay.in", "a.co"],
+      "category": "ecommerce",
+      "login_fields": ["email", "password"],
+      "login_paths": ["/ap/signin", "/gp/sign-in.html"]
+    },
+    {
+      "name": "Flipkart",
+      "slug": "flipkart",
+      "aliases": ["flipkart", "flip kart"],
+      "domains": ["flipkart.com", "flipkart.net"],
+      "category": "ecommerce",
+      "login_fields": ["phone", "password", "otp"],
+      "login_paths": ["/account/login"]
+    },
+    {
+      "name": "Google",
+      "slug": "google",
+      "aliases": ["google", "gmail", "google account"],
+      "domains": ["google.com", "google.co.in", "gmail.com", "accounts.google.com", "googleusercontent.com"],
+      "category": "technology",
+      "login_fields": ["email", "password", "otp"],
+      "login_paths": ["/signin", "/ServiceLogin"]
+    },
+    {
+      "name": "Facebook",
+      "slug": "facebook",
+      "aliases": ["facebook", "meta", "fb"],
+      "domains": ["facebook.com", "fb.com", "m.facebook.com"],
+      "category": "social",
+      "login_fields": ["email", "password"],
+      "login_paths": ["/login.php", "/login"]
+    },
+    {
+      "name": "Instagram",
+      "slug": "instagram",
+      "aliases": ["instagram", "insta"],
+      "domains": ["instagram.com", "instagr.am"],
+      "category": "social",
+      "login_fields": ["username", "password"],
+      "login_paths": ["/accounts/login"]
+    },
+    {
+      "name": "WhatsApp",
+      "slug": "whatsapp",
+      "aliases": ["whatsapp", "whats app"],
+      "domains": ["whatsapp.com", "wa.me", "web.whatsapp.com"],
+      "category": "messaging",
+      "login_fields": ["phone", "qr"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Microsoft",
+      "slug": "microsoft",
+      "aliases": ["microsoft", "outlook", "office 365", "onedrive", "microsoft 365"],
+      "domains": ["microsoft.com", "live.com", "outlook.com", "office.com", "microsoftonline.com"],
+      "category": "technology",
+      "login_fields": ["email", "password", "otp"],
+      "login_paths": ["/login", "/common/oauth2"]
+    },
+    {
+      "name": "Apple",
+      "slug": "apple",
+      "aliases": ["apple", "icloud", "apple id"],
+      "domains": ["apple.com", "icloud.com", "apple.co"],
+      "category": "technology",
+      "login_fields": ["apple id", "password", "otp"],
+      "login_paths": ["/sign-in", "/apple-id"]
+    },
+    {
+      "name": "Netflix",
+      "slug": "netflix",
+      "aliases": ["netflix"],
+      "domains": ["netflix.com", "netflix.net"],
+      "category": "entertainment",
+      "login_fields": ["email", "password"],
+      "login_paths": ["/login", "/signup"]
+    },
+    {
+      "name": "LinkedIn",
+      "slug": "linkedin",
+      "aliases": ["linkedin"],
+      "domains": ["linkedin.com", "lnkd.in"],
+      "category": "social",
+      "login_fields": ["email", "password"],
+      "login_paths": ["/login", "/uas/login"]
+    },
+    {
+      "name": "X",
+      "slug": "x",
+      "aliases": ["twitter", "x.com"],
+      "domains": ["x.com", "twitter.com", "t.co"],
+      "category": "social",
+      "login_fields": ["username", "password"],
+      "login_paths": ["/i/flow/login"]
+    },
+    {
+      "name": "Telegram",
+      "slug": "telegram",
+      "aliases": ["telegram"],
+      "domains": ["telegram.org", "t.me", "telegram.me"],
+      "category": "messaging",
+      "login_fields": ["phone", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Binance",
+      "slug": "binance",
+      "aliases": ["binance"],
+      "domains": ["binance.com", "binance.us"],
+      "category": "crypto",
+      "login_fields": ["email", "password", "otp"],
+      "login_paths": ["/en/login"]
+    },
+    {
+      "name": "Coinbase",
+      "slug": "coinbase",
+      "aliases": ["coinbase"],
+      "domains": ["coinbase.com", "coinbase.in"],
+      "category": "crypto",
+      "login_fields": ["email", "password", "otp"],
+      "login_paths": ["/signin"]
+    },
+    {
+      "name": "State Bank of India",
+      "slug": "sbi",
+      "aliases": ["sbi", "state bank of india", "onlinesbi", "yono"],
+      "domains": ["onlinesbi.sbi", "sbi.co.in", "onlinesbi.com", "yono.sbi"],
+      "category": "banking",
+      "login_fields": ["username", "password", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "HDFC Bank",
+      "slug": "hdfc",
+      "aliases": ["hdfc", "hdfc bank"],
+      "domains": ["hdfcbank.com", "hdfc.com", "hdfcbank.net"],
+      "category": "banking",
+      "login_fields": ["customer id", "password", "otp"],
+      "login_paths": ["/netbanking", "/login"]
+    },
+    {
+      "name": "ICICI Bank",
+      "slug": "icici",
+      "aliases": ["icici", "icici bank"],
+      "domains": ["icicibank.com", "icicibank.net", "icici.com"],
+      "category": "banking",
+      "login_fields": ["user id", "password", "otp"],
+      "login_paths": ["/login", "/netbanking"]
+    },
+    {
+      "name": "Axis Bank",
+      "slug": "axis",
+      "aliases": ["axis bank", "axis"],
+      "domains": ["axisbank.com", "axisbank.co.in"],
+      "category": "banking",
+      "login_fields": ["customer id", "password", "otp"],
+      "login_paths": ["/login"]
+    },
+    {
+      "name": "Kotak Mahindra Bank",
+      "slug": "kotak",
+      "aliases": ["kotak", "kotak bank"],
+      "domains": ["kotak.com", "kotakbank.com"],
+      "category": "banking",
+      "login_fields": ["crn", "password", "otp"],
+      "login_paths": ["/login"]
+    },
+    {
+      "name": "Punjab National Bank",
+      "slug": "pnb",
+      "aliases": ["pnb", "punjab national bank"],
+      "domains": ["pnbindia.in", "netpnb.com", "pnb.co.in"],
+      "category": "banking",
+      "login_fields": ["user id", "password", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Bank of Baroda",
+      "slug": "bob",
+      "aliases": ["bank of baroda", "bob"],
+      "domains": ["bankofbaroda.in", "bankofbaroda.com", "bobibanking.com"],
+      "category": "banking",
+      "login_fields": ["user id", "password", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Canara Bank",
+      "slug": "canara",
+      "aliases": ["canara bank", "canara"],
+      "domains": ["canarabank.com", "canarabank.in"],
+      "category": "banking",
+      "login_fields": ["user id", "password", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Yes Bank",
+      "slug": "yesbank",
+      "aliases": ["yes bank", "yesbank"],
+      "domains": ["yesbank.in", "yesbank.com"],
+      "category": "banking",
+      "login_fields": ["user id", "password", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "IndusInd Bank",
+      "slug": "indusind",
+      "aliases": ["indusind", "indusind bank"],
+      "domains": ["indusind.com"],
+      "category": "banking",
+      "login_fields": ["user id", "password", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Paytm",
+      "slug": "paytm",
+      "aliases": ["paytm", "paytm payments bank"],
+      "domains": ["paytm.com", "paytmbank.com", "paytm.in"],
+      "category": "payments",
+      "login_fields": ["phone", "password", "otp", "upi pin"],
+      "login_paths": ["/login"]
+    },
+    {
+      "name": "PhonePe",
+      "slug": "phonepe",
+      "aliases": ["phonepe", "phone pe"],
+      "domains": ["phonepe.com", "phonepe.in"],
+      "category": "payments",
+      "login_fields": ["phone", "otp", "upi pin"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Google Pay",
+      "slug": "googlepay",
+      "aliases": ["google pay", "gpay", "tez"],
+      "domains": ["pay.google.com", "gpay.app.goo.gl"],
+      "category": "payments",
+      "login_fields": ["phone", "otp", "upi pin"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "BHIM",
+      "slug": "bhim",
+      "aliases": ["bhim", "bhim upi"],
+      "domains": ["bhimupi.org.in", "npci.org.in"],
+      "category": "payments",
+      "login_fields": ["phone", "otp", "upi pin"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "MobiKwik",
+      "slug": "mobikwik",
+      "aliases": ["mobikwik"],
+      "domains": ["mobikwik.com"],
+      "category": "payments",
+      "login_fields": ["phone", "otp", "upi pin"],
+      "login_paths": ["/login"]
+    },
+    {
+      "name": "Income Tax Department",
+      "slug": "incometax",
+      "aliases": ["income tax", "incometax", "e-filing", "itr"],
+      "domains": ["incometax.gov.in", "incometaxindia.gov.in", "tin-nsdl.com"],
+      "category": "government",
+      "login_fields": ["pan", "user id", "password", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "EPFO",
+      "slug": "epfo",
+      "aliases": ["epfo", "epf", "provident fund", "pf"],
+      "domains": ["epfindia.gov.in", "epfindia.com", "unifiedportal-emp.epfindia.gov.in"],
+      "category": "government",
+      "login_fields": ["uan", "password", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "IRCTC",
+      "slug": "irctc",
+      "aliases": ["irctc", "indian railways"],
+      "domains": ["irctc.co.in", "irctc.com", "indianrail.gov.in"],
+      "category": "government",
+      "login_fields": ["username", "password", "otp"],
+      "login_paths": ["/nget/train-search"]
+    },
+    {
+      "name": "UIDAI",
+      "slug": "uidai",
+      "aliases": ["uidai", "aadhaar", "aadhar"],
+      "domains": ["uidai.gov.in", "myaadhaar.uidai.gov.in"],
+      "category": "government",
+      "login_fields": ["aadhaar", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Reserve Bank of India",
+      "slug": "rbi",
+      "aliases": ["rbi", "reserve bank of india"],
+      "domains": ["rbi.org.in", "rbi.gov.in"],
+      "category": "government",
+      "login_fields": [],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "GST Portal",
+      "slug": "gst",
+      "aliases": ["gst", "gstn"],
+      "domains": ["gst.gov.in", "gstn.org.in"],
+      "category": "government",
+      "login_fields": ["username", "password", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "DigiLocker",
+      "slug": "digilocker",
+      "aliases": ["digilocker", "digi locker"],
+      "domains": ["digilocker.gov.in", "digitallocker.gov.in"],
+      "category": "government",
+      "login_fields": ["aadhaar", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "India Post",
+      "slug": "indiapost",
+      "aliases": ["india post", "indian post", "speed post"],
+      "domains": ["indiapost.gov.in", "indiapost.in"],
+      "category": "government",
+      "login_fields": ["username", "password"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Airtel",
+      "slug": "airtel",
+      "aliases": ["airtel"],
+      "domains": ["airtel.in", "airtel.com"],
+      "category": "telecom",
+      "login_fields": ["phone", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Jio",
+      "slug": "jio",
+      "aliases": ["jio", "reliance jio"],
+      "domains": ["jio.com", "jiomart.com", "myjio.com"],
+      "category": "telecom",
+      "login_fields": ["phone", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Swiggy",
+      "slug": "swiggy",
+      "aliases": ["swiggy"],
+      "domains": ["swiggy.com", "swiggy.in"],
+      "category": "delivery",
+      "login_fields": ["phone", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Zomato",
+      "slug": "zomato",
+      "aliases": ["zomato"],
+      "domains": ["zomato.com", "zomato.in"],
+      "category": "delivery",
+      "login_fields": ["phone", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Uber",
+      "slug": "uber",
+      "aliases": ["uber"],
+      "domains": ["uber.com", "uber.in"],
+      "category": "transport",
+      "login_fields": ["email", "phone", "password", "otp"],
+      "login_paths": ["/login"]
+    },
+    {
+      "name": "IRCTC Rail Connect",
+      "slug": "irctc-rail",
+      "aliases": ["rail connect", "railconnect"],
+      "domains": ["irctc.co.in"],
+      "category": "government",
+      "login_fields": ["username", "password", "otp"],
+      "login_paths": ["/"]
+    },
+    {
+      "name": "Myntra",
+      "slug": "myntra",
+      "aliases": ["myntra"],
+      "domains": ["myntra.com"],
+      "category": "ecommerce",
+      "login_fields": ["email", "phone", "password"],
+      "login_paths": ["/login"]
+    },
+    {
+      "name": "Meesho",
+      "slug": "meesho",
+      "aliases": ["meesho"],
+      "domains": ["meesho.com", "meesho.io"],
+      "category": "ecommerce",
+      "login_fields": ["phone", "otp"],
+      "login_paths": ["/login"]
+    },
+    {
+      "name": "WazirX",
+      "slug": "wazirx",
+      "aliases": ["wazirx"],
+      "domains": ["wazirx.com"],
+      "category": "crypto",
+      "login_fields": ["email", "password", "otp"],
+      "login_paths": ["/login"]
+    },
+    {
+      "name": "CoinDCX",
+      "slug": "coindcx",
+      "aliases": ["coindcx"],
+      "domains": ["coindcx.com"],
+      "category": "crypto",
+      "login_fields": ["email", "password", "otp"],
+      "login_paths": ["/login"]
+    }
+  ]
+}
