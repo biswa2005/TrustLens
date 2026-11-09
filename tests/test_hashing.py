@@ -1,4 +1,4 @@
-from src.hashing import canonicalize, compute_nonce, fingerprint
+from app.hashing import canonicalize, compute_nonce, fingerprint
 
 
 def test_canonical_is_deterministic():

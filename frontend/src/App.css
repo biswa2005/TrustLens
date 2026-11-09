@@ -11,5 +11,6 @@ input { width: 100%; padding: 8px; margin-top: 4px; border-radius: 8px; border: 
 button { padding: 8px 12px; border-radius: 8px; border: 1px solid #3b5998; background: #1b2b52; color: #e7edf7; cursor: pointer; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 .meta { margin-top: 12px; font-size: 12px; word-break: break-all; }
-pre { background: #0b1020; padding: 12px; border-radius: 8px; overflow: auto; max-height: 320px; }
+textarea { width: 100%; padding: 8px; margin-top: 4px; border-radius: 8px; border: 1px solid #2e406f; background: #0b1020; color: #e7edf7; min-height: 72px; }
+.hint { color: #9bb0d3; font-size: 13px; margin-top: 0; }
 .log { font-size: 12px; color: #9fe6a7; }

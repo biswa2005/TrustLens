@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..db import get_db, new_id, now
-from ..hashing import compute_nonce, fingerprint
-from ..chain import ChainClient
+from ...db import get_db, new_id, now
+from ...hashing import compute_nonce, fingerprint
+from ...chain import ChainClient
 
 router = APIRouter(prefix="/threat-reports", tags=["threat-reports"])
 

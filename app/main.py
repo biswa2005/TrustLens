@@ -1,14 +1,20 @@
 """ThreatLens FastAPI application."""
 
 from __future__ import annotations
-
 import logging
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Ensure src/* components (threat reports, chain, db) see .env variables.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
+from app.api.health import router as health_router
 from app.api.router import api_router
 from app.config import Settings, get_settings
 from app.services import ForensicServices, build_services
@@ -68,14 +74,11 @@ def create_app(
         allow_headers=["*"],
     )
     app.include_router(api_router, prefix=resolved.api_prefix)
+    app.include_router(health_router)
 
     @app.get("/", include_in_schema=False)
     async def root() -> RedirectResponse:
         return RedirectResponse(url="/docs")
-
-    @app.get("/health", include_in_schema=False)
-    async def root_health() -> dict[str, str]:
-        return {"status": "ok", "app": resolved.app_name, "version": resolved.app_version}
 
     return app
 

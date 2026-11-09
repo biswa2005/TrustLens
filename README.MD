@@ -137,7 +137,7 @@ Boilerplate FastAPI project managed with `uv`.
 
 ```bash
 uv sync
-uv run uvicorn src.main:app --host 0.0.0.0 --port 8000```
+python run.py --host 0.0.0.0 --port 8000```
 
 Then open http://localhost:8000.
 
