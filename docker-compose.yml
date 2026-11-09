@@ -6,14 +6,25 @@ services:
     cap_drop: [ALL]
     cap_add: [NET_ADMIN, SETUID, SETGID, SETPCAP]
     read_only: true
-    tmpfs: [/tmp]
+    tmpfs: ["/tmp:size=16m,mode=1777,noexec,nosuid,nodev"]
     security_opt: [no-new-privileges:true]
     mem_limit: 256m
+    memswap_limit: 256m
     cpus: 1.0
     pids_limit: 128
+    ulimits:
+      nofile:
+        soft: 128
+        hard: 128
     networks: [fetch, public]
     environment:
       FETCHER_TOKEN: ${FETCHER_TOKEN}
+      FETCH_BODY_CAP_BYTES: "524288"
+      FETCH_MAX_HOPS: "8"
+      FETCH_TOTAL_BUDGET: "20"
+      FETCH_CONNECT_TIMEOUT: "3"
+      FETCH_READ_TIMEOUT: "5"
+      FETCH_HOP_BUDGET: "8"
     ports: ["127.0.0.1:8001:8001"]
     healthcheck:
       test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/healthz', timeout=2)"]

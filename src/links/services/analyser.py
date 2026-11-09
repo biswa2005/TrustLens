@@ -1,12 +1,12 @@
 from __future__ import annotations
 import asyncio
 import os
+import hashlib
 import json, math
 from collections import Counter
 from pathlib import Path
 from urllib.parse import urlsplit, urljoin
 import httpx
-from selectolax.lexbor import LexborHTMLParser
 from links.models import CheckResult, Finding, Coverage, Report
 from links.services.checks.normalise import normalize
 from links.services.checks import network
@@ -20,8 +20,8 @@ from rapidfuzz.distance import DamerauLevenshtein
 
 FETCH_RESPONSE_CAP=5*1024*1024
 
-async def fetcher_response(client,url,payload):
-    async with client.stream("POST",url,json=payload) as response:
+async def fetcher_response(client,url,payload,headers=None):
+    async with client.stream("POST",url,json=payload,headers=headers) as response:
         response.raise_for_status(); body=bytearray()
         async for chunk in response.aiter_bytes():
             if len(body)+len(chunk)>FETCH_RESPONSE_CAP: raise ValueError("fetcher response exceeded size limit")
@@ -36,11 +36,16 @@ async def fetcher_response(client,url,payload):
             raise ValueError("invalid fetcher hop")
         if hop.get("location") is not None and (not isinstance(hop["location"],str) or len(hop["location"])>2048):
             raise ValueError("invalid fetcher location")
-    pages=data.get("html_by_hop",[])
+    pages=data.get("password_forms_by_hop",[])
     if not isinstance(pages,list) or len(pages)>MAX_HOPS_RESPONSE:
         raise ValueError("invalid fetcher page list")
-    if any(not isinstance(p,dict) or not isinstance(p.get("html",""),str) or len(p.get("html",""))>524288 for p in pages):
-        raise ValueError("invalid fetcher page")
+    for page in pages:
+        if (not isinstance(page,dict) or not isinstance(page.get("url"),str) or len(page["url"])>2048
+                or not isinstance(page.get("password_form_actions"),list) or len(page["password_form_actions"])>32
+                or not isinstance(page.get("actions_truncated"),bool)):
+            raise ValueError("invalid fetcher page")
+        if any(not isinstance(action,str) or len(action)>2048 for action in page["password_form_actions"]):
+            raise ValueError("invalid password form action")
     return data
 
 MAX_HOPS_RESPONSE=8
@@ -137,9 +142,11 @@ def dampen(item,n):
 async def check_redirect(ctx):
     fetch_url=os.getenv("FETCHER_URL")
     if not fetch_url: raise CheckUnavailable("fetcher not configured")
+    token=os.getenv("FETCHER_TOKEN","")
+    if not token: raise CheckUnavailable("fetcher token not configured")
     try:
         async with httpx.AsyncClient(timeout=23) as client:
-            data=await fetcher_response(client,fetch_url.rstrip("/")+"/fetch",{"url":ctx.nurl.normalised,"options":{"max_hops":8}})
+            data=await fetcher_response(client,fetch_url.rstrip("/")+"/fetch",{"url":ctx.nurl.normalised,"options":{"max_hops":8}},headers={"X-Fetcher-Token":token})
         ctx.fetch_result=data
         findings=[]; hops=data["hops"]
         parsed=[]
@@ -200,16 +207,15 @@ async def check_redirect(ctx):
 
 @register_check("password_form",depends_on=("redirect_chain",),timeout=3)
 async def check_password(ctx):
-    data=ctx.fetch_result or {}; pages=data.get("html_by_hop") or ([{"url":data.get("final_url") or ctx.nurl.normalised,"html":data.get("final_html")}] if data.get("final_html") else [])
+    data=ctx.fetch_result or {}; pages=data.get("password_forms_by_hop",[])
     if not pages: raise CheckUnavailable("fetcher returned no HTML")
     findings=[]
     for page in pages:
-        body=page.get("html"); final=page.get("url") or data.get("final_url") or ctx.nurl.normalised
-        if not body: continue
-        tree=LexborHTMLParser(body)
-        for form in tree.css("form"):
-            if not form.css('input[type="password"]'): continue
-            action=urljoin(final,form.attributes.get("action") or final); parsed=normalize(action)
+        final=page.get("url") or data.get("final_url") or ctx.nurl.normalised
+        if page.get("actions_truncated"):
+            ctx.values.setdefault("limitations",[]).append("Password form inspection was incomplete because a page exceeded form evidence limits")
+        for form_action in page.get("password_form_actions",[]):
+            action=urljoin(final,form_action or final); parsed=normalize(action)
             if parsed.registered_domain!=normalize(final).registered_domain:
                 findings.append(finding("password_form","cross_domain","Password form submits to a different registered domain","strong","credential_harvesting","behavioural",{"action_host":parsed.host,"page_host":urlsplit(final).hostname,"page_url":final}))
             elif parsed.scheme=="http":
@@ -296,16 +302,16 @@ async def check_urlhaus(ctx):
 
 @register_check("tls_certificate",depends_on=("normalise","redirect_chain"),requires_success=("normalise",),timeout=10.0,needs_network=True)
 async def check_tls_certificate(ctx):
-    from datetime import date, datetime, timezone
+    from datetime import datetime, timezone
     import binascii
     from cryptography import x509
-    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives import hashes, serialization
     from links.models_tls import (CADistrustClassification as D, CertificateDetails,
         ChainStatus as C, HostnameStatus as H, RevocationStatus as R, TLSReport, TrustVerdict,
         inconclusive_report)
     from links.services.tls._probe_models import TLSProbeRequest
     from links.services.authority import canonical_authority
-    from links.services.tls.distrust import load_dataset
+    from links.services.tls.distrust import load_dataset, matching_records
     from links.services.tls.findings import finding
     from links.services.tls.fetcher_client import BoundsError, decode_chain, decode_ocsp_staple, post_probe_tls
     from links.services.tls.ct import inspect_embedded_scts
@@ -379,19 +385,11 @@ async def check_tls_certificate(ctx):
             else:
                 matches=[]
                 for cert in certs:
-                    fp=cert.fingerprint(hashes.SHA256()); pub=cert.public_key().public_bytes(__import__("cryptography").hazmat.primitives.serialization.Encoding.DER,__import__("cryptography").hazmat.primitives.serialization.PublicFormat.SubjectPublicKeyInfo); spki=hashes.Hash(hashes.SHA256()); spki.update(pub); spki_hash=spki.finalize()
-                    for record in distrust_data.records:
-                        if fp!=record.fingerprint and spki_hash!=record.spki_hash: continue
-                        scope=record.scope or {"type":"all"}
-                        if scope.get("type")=="leaf_not_before_gte":
-                            cutoff=date.fromisoformat(scope["cutoff"][:10])
-                            if leaf.not_valid_before_utc.date() < cutoff: continue
-                        elif scope.get("type")!="all": continue
-                        matches.append(record)
+                    matches.extend(matching_records(cert, distrust_data, leaf_not_before=leaf.not_valid_before_utc))
                 distrust=(D.COMPROMISED if any(r.classification=="compromised" for r in matches)
                           else D.DISTRUSTED if matches else D.TRUSTED)
-                if distrust==D.COMPROMISED: fs.append(finding("compromised_ca",target,{})); fired.add("compromised_ca")
-                elif distrust==D.DISTRUSTED: fs.append(finding("distrusted_ca",target,{})); fired.add("distrusted_ca")
+                if distrust==D.COMPROMISED: fs.append(finding("compromised_ca",target,{"record_id":next(r.id for r in matches if r.classification=="compromised")})); fired.add("compromised_ca")
+                elif distrust==D.DISTRUSTED: fs.append(finding("distrusted_ca",target,{"record_id":matches[0].id})); fired.add("distrusted_ca")
             for idx,cert in enumerate(certs):
                 try: san=cert.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
                 except x509.ExtensionNotFound: san=None
@@ -405,7 +403,8 @@ async def check_tls_certificate(ctx):
                 try: usage=cert.extensions.get_extension_for_class(x509.KeyUsage).value
                 except x509.ExtensionNotFound: usage=None
                 usages=tuple(name for name in ("digital_signature","content_commitment","key_encipherment","data_encipherment","key_agreement","key_cert_sign","crl_sign") if usage and getattr(usage,name,False))
-                cert_details.append(CertificateDetails(subject=cert.subject.rfc4514_string(),issuer=cert.issuer.rfc4514_string(),serial_number=hex(cert.serial_number),not_before=cert.not_valid_before_utc,not_after=cert.not_valid_after_utc,san_dns=tuple(san.get_values_for_type(x509.DNSName)) if san else (),san_ip=tuple(str(ip) for ip in san.get_values_for_type(x509.IPAddress)) if san else (),key_usage=usages,public_key_algorithm=key_algo,public_key_size=key_size,signature_hash=sig,is_ca=idx>0))
+                spki_der=cert.public_key().public_bytes(serialization.Encoding.DER,serialization.PublicFormat.SubjectPublicKeyInfo)
+                cert_details.append(CertificateDetails(subject=cert.subject.rfc4514_string(),issuer=cert.issuer.rfc4514_string(),serial_number=hex(cert.serial_number),fingerprint_sha256=cert.fingerprint(hashes.SHA256()).hex(),spki_sha256=hashlib.sha256(spki_der).hexdigest(),not_before=cert.not_valid_before_utc,not_after=cert.not_valid_after_utc,san_dns=tuple(san.get_values_for_type(x509.DNSName)) if san else (),san_ip=tuple(str(ip) for ip in san.get_values_for_type(x509.IPAddress)) if san else (),key_usage=usages,public_key_algorithm=key_algo,public_key_size=key_size,signature_hash=sig,is_ca=idx>0))
                 for rule,evidence in inspect_crypto(cert,is_anchor=idx==len(certs)-1 and cert.subject==cert.issuer):
                     fs.append(finding(rule,target,evidence)); fired.add(rule)
             if chain_status==C.EXPIRED: fs.append(finding("cert_expired",target,chain_evidence))
@@ -504,4 +503,72 @@ async def analyse(raw: str, skip_third_party_reputation: bool=False) -> Report:
     summary={"start_registered_domain":ctx.nurl.registered_domain,"final_registered_domain":final_domain,"hop_count":len(hops),"chain_complete":chain,"cross_site":bool(final_domain and final_domain!=ctx.nurl.registered_domain),"via_shortener":ctx.nurl.registered_domain in SHORTENERS,"blocked":any(h.get("blocked_reason") for h in hops),"target_domains_analysed":[item[2].registered_domain for item in unique]}
     from links.services.risk import RECOMMENDATIONS
     return Report(input=raw,normalised_url=ctx.nurl,risk_class=risk,risk_reasoning=[explain(risk,groups,findings,results,chain)],confidence=confidence,evidence_groups=groups,redirect_summary=summary,coverage=Coverage(completed=completed,planned=11,checks=results),findings=findings,redirect_chain=hops,limitations=limitations,recommendations=RECOMMENDATIONS[risk],tls_reports=ctx.values.get("tls_reports"))
+
+
+async def screen_url(raw: str, mode: str = "full") -> dict:
+    """Local-only pre-screen. The input is neither persisted nor logged here."""
+    import hashlib
+    import time
+    from datetime import datetime, timezone
+    started = time.perf_counter()
+    initial = normalize(raw)
+    if mode == "host_only":
+        port = f":{initial.port}" if initial.port else ""
+        host = f"[{initial.host}]" if initial.is_ip_host and ":" in initial.host else initial.host
+        raw = f"{initial.scheme}://{host}{port}/"
+    ctx = Context(raw_input=raw)
+    checks, findings = await run_all(ctx, ["normalise", "lexical", "brand_impersonation"])
+    if not ctx.nurl:
+        raise ValueError("invalid_url")
+
+    from links.services.checks.urlhaus import run as lookup_urlhaus
+    urlhaus_status, urlhaus_findings, reason = "skipped", [], None
+    if mode == "full":
+        urlhaus_status, urlhaus_findings, reason = await lookup_urlhaus(ctx.nurl.normalised)
+        findings.extend(urlhaus_findings)
+    elif mode == "host_only":
+        from links.services import redis_store
+        try:
+            records = await redis_store.lookup_host(ctx.nurl.host)
+            urlhaus_status = "ok"
+            for rec in records:
+                active = rec.get("record_status") == "active"
+                urlhaus_findings.append(Finding(
+                    id=f"intel_urlhaus.{rec.get('id')}", check_id="intel_urlhaus",
+                    category="intel", title="URLhaus indicator match",
+                    severity="strong" if active else "moderate", source="urlhaus",
+                    evidence_group="urlhaus", evidence_class="reputation",
+                    evidence={**rec, "active_confirmation_eligible": active},
+                ))
+        except Exception as exc:
+            urlhaus_status, reason = "unavailable", str(exc)
+        findings.extend(urlhaus_findings)
+    checks.append(CheckResult(
+        check_id="intel_urlhaus",
+        status="ok" if urlhaus_status == "ok" else "unavailable" if urlhaus_status == "unavailable" else "skipped",
+        reason=reason,
+    ))
+    active_match = any(item.evidence.get("active_confirmation_eligible") for item in urlhaus_findings)
+    risk, groups = classify(findings, checks, chain_complete=False)
+    substantive_signal = any(item.severity in {"moderate", "strong"} for item in findings)
+    if active_match:
+        verdict, confidence = "block", "high"
+    elif substantive_signal or risk in {"high", "confirmed_malicious"}:
+        verdict, confidence = "warn", "medium"
+    else:
+        verdict, confidence = "no_local_signals", "low"
+    completed = sum(result.status == "ok" for result in checks)
+    return {
+        "target_sha256": hashlib.sha256(ctx.nurl.normalised.encode("utf-8")).hexdigest(),
+        "verdict": verdict,
+        "confidence": confidence,
+        "risk_class": risk,
+        "evidence_groups": groups,
+        "findings": [item.model_dump(mode="json") for item in findings],
+        "coverage": {"completed": completed, "planned": 10, "scope": "local_pre_screen", "checks": [item.model_dump(mode="json") for item in checks]},
+        "mode": mode,
+        "evaluated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "elapsed_ms": int((time.perf_counter() - started) * 1000),
+        "limitations": ["Local-only pre-screen; no redirects, live DNS, or TLS verification. No local signals do not establish safety."],
+    }
 

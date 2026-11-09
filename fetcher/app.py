@@ -1,26 +1,72 @@
 from __future__ import annotations
 import asyncio, http.client, socket, ssl, time, os, threading, hmac
 import re
+from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit
 from fastapi import FastAPI, Header, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from fetcher.guard import validate_and_resolve, validate_and_resolve_async, Blocked
 from fetcher.models import TLSProbeRequest, TLSProbeResponse
 from fetcher.tls_probe import run_tls_probe
 
 app=FastAPI(title="TrustLens isolated fetcher")
 _tls_sem = asyncio.Semaphore(4)
-MAX_BODY=int(os.getenv("FETCH_BODY_CAP_BYTES","524288"))
-MAX_HOPS=int(os.getenv("FETCH_MAX_HOPS","8"))
-TOTAL_BUDGET=float(os.getenv("FETCH_TOTAL_BUDGET","20"))
-CONNECT_TIMEOUT=float(os.getenv("FETCH_CONNECT_TIMEOUT","3"))
-READ_TIMEOUT=float(os.getenv("FETCH_READ_TIMEOUT","5"))
+_fetch_sem = asyncio.Semaphore(4)
+MAX_BODY=min(524288,max(1024,int(os.getenv("FETCH_BODY_CAP_BYTES","524288"))))
+MAX_HOPS=min(8,max(1,int(os.getenv("FETCH_MAX_HOPS","8"))))
+TOTAL_BUDGET=min(20.0,max(1.0,float(os.getenv("FETCH_TOTAL_BUDGET","20"))))
+CONNECT_TIMEOUT=min(3.0,max(0.1,float(os.getenv("FETCH_CONNECT_TIMEOUT","3"))))
+READ_TIMEOUT=min(5.0,max(0.1,float(os.getenv("FETCH_READ_TIMEOUT","5"))))
 MAX_HEADER_BYTES=65536
-HOP_BUDGET=float(os.getenv("FETCH_HOP_BUDGET","8"))
+HOP_BUDGET=min(8.0,max(0.1,float(os.getenv("FETCH_HOP_BUDGET","8"))))
+MAX_FORMS_PER_PAGE=32
+MAX_FORM_ACTION_LENGTH=2048
+
+class FetchOptions(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    max_hops:int=Field(default=8,ge=1,le=8)
 
 class FetchRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     url:str=Field(min_length=1,max_length=2048)
-    options:dict={}
+    options:FetchOptions=Field(default_factory=FetchOptions)
+
+class _PasswordFormParser(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self._forms=[]
+        self.actions=[]
+        self.truncated=False
+
+    def _finish_form(self, form):
+        if not form["has_password"]:
+            return
+        if len(self.actions)>=MAX_FORMS_PER_PAGE or len(form["action"])>MAX_FORM_ACTION_LENGTH:
+            self.truncated=True
+            return
+        self.actions.append(form["action"])
+
+    def handle_starttag(self, tag, attrs):
+        values={key.lower():(value or "") for key,value in attrs if key}
+        if tag.lower()=="form":
+            self._forms.append({"action":values.get("action",""),"has_password":False})
+        elif tag.lower()=="input" and values.get("type","").lower()=="password" and self._forms:
+            self._forms[-1]["has_password"]=True
+
+    def handle_endtag(self, tag):
+        if tag.lower()=="form" and self._forms:
+            self._finish_form(self._forms.pop())
+
+    def close(self):
+        super().close()
+        while self._forms:
+            self._finish_form(self._forms.pop())
+
+def _password_form_evidence(html):
+    parser=_PasswordFormParser()
+    parser.feed(html)
+    parser.close()
+    return parser.actions,parser.truncated
 
 def request_one(url,deadline=None,resolved=None):
     p,port,ip=resolved or validate_and_resolve(url); started=time.monotonic(); raw=None; timer=None
@@ -56,8 +102,19 @@ def request_one(url,deadline=None,resolved=None):
             except OSError: pass
 
 @app.post("/fetch")
-async def fetch(req:FetchRequest):
-    current=req.url; hops=[]; seen=set(); pages=[]; max_hops=min(MAX_HOPS,max(1,int(req.options.get("max_hops",MAX_HOPS)))); final_html=None; complete=False; errors=[]; started=time.monotonic(); domain_visits={}
+async def fetch(req:FetchRequest, x_fetcher_token: str = Header(default="")):
+    _authorize(x_fetcher_token)
+    try:
+        await asyncio.wait_for(_fetch_sem.acquire(),0.5)
+    except TimeoutError:
+        raise HTTPException(status_code=429,detail="fetcher busy")
+    try:
+        return await _fetch(req)
+    finally:
+        _fetch_sem.release()
+
+async def _fetch(req:FetchRequest):
+    current=req.url; hops=[]; seen=set(); pages=[]; max_hops=min(MAX_HOPS,req.options.max_hops); complete=False; errors=[]; started=time.monotonic(); domain_visits={}
     for i in range(max_hops):
         if time.monotonic()-started>=TOTAL_BUDGET:
             errors.append("total_budget_exceeded"); break
@@ -69,7 +126,8 @@ async def fetch(req:FetchRequest):
             hop={"url":current,"status":data["status"],"location":loc,"resolved_ip":data["ip"],"registered_domain":p.hostname,"scheme":p.scheme,"content_type":data["headers"].get("content-type"),"elapsed_ms":data["elapsed_ms"],"via":"start" if i==0 else "http3xx"}
             hops.append(hop)
             if data["body"]:
-                final_html=data["body"]; pages.append({"url":current,"html":data["body"],"truncated":data["truncated"]})
+                actions,actions_truncated=_password_form_evidence(data["body"])
+                pages.append({"url":current,"password_form_actions":actions,"actions_truncated":actions_truncated})
             if data["truncated"]: errors.append("html_truncated")
             if data["status"] in (403,429): errors.append("destination_may_block_automated_clients")
             domain_visits[p.hostname]=domain_visits.get(p.hostname,0)+1
@@ -113,16 +171,19 @@ async def fetch(req:FetchRequest):
         errors.append("excessive_hops")
     limitations=[] if complete else ["final_url is last reachable hop, not necessarily true destination"]
     if "destination_may_block_automated_clients" in errors: limitations.append("destination may serve different content to automated clients")
-    return {"hops":hops,"final_url":hops[-1]["url"] if hops else None,"final_html":final_html,"html_by_hop":pages,"html_truncated":"html_truncated" in errors,"chain_complete":complete,"errors":errors,"limitations":limitations}
+    return {"hops":hops,"final_url":hops[-1]["url"] if hops else None,"password_forms_by_hop":pages,"html_truncated":"html_truncated" in errors,"chain_complete":complete,"errors":errors,"limitations":limitations}
 
 @app.get("/healthz")
 async def healthz(): return {"status":"ok"}
 
-@app.post("/probe/tls", response_model=TLSProbeResponse)
-async def probe_tls(req: TLSProbeRequest, x_fetcher_token: str = Header(...)):
-    expected = os.getenv("FETCHER_TOKEN", "")
-    if not expected or not hmac.compare_digest(x_fetcher_token, expected):
+def _authorize(x_fetcher_token: str) -> None:
+    expected=os.getenv("FETCHER_TOKEN","")
+    if not expected or not hmac.compare_digest(x_fetcher_token.encode("utf-8"),expected.encode("utf-8")):
         raise HTTPException(status_code=401)
+
+@app.post("/probe/tls", response_model=TLSProbeResponse)
+async def probe_tls(req: TLSProbeRequest, x_fetcher_token: str = Header(default="")):
+    _authorize(x_fetcher_token)
     try:
         await asyncio.wait_for(_tls_sem.acquire(), 0.5)
     except TimeoutError:

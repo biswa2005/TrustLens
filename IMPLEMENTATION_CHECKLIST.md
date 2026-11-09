@@ -8,15 +8,15 @@ Source of requirements: the user-supplied Module 1 implementation plan (not comm
 - Compose contains only the isolated fetcher, PostgreSQL 16 + pgvector, and Redis 7. PostgreSQL is persistent; Redis is URLhaus indicator storage. The fetcher has no route to the `data` network.
 - The ten original Module 1 checks remain unchanged. Module 2 adds `tls_certificate` as check 11; URLhaus remains check 10 and Redis is not a check.
 - URLhaus import is manual and one-time. The importer is not part of API startup or a scheduler.
-- Modules 1 and 2 are implemented. Module 5, embeddings, LLM explanations, and a dashboard are not present in this repository.
+- Core Module 1 and Module 2 code is present, with acceptance gaps recorded below. Module 5, embeddings, LLM explanations, and a dashboard are not present in this repository.
 
 ## Phase 0 — Existing scaffold and services
 
 - [x] T0.1 Reuse the existing `src/main.py`, `src/links/`, uv project, and `.env.example`; no secrets copied into the example.
 - [x] T0.2 Declare dependencies in `pyproject.toml`, regenerate `uv.lock`, and export `requirements.txt`; `python-dotenv` is explicit because both `run.py` and the manual importer use it.
-- [~] T0.3 Wire `/api/v1/analyse/url`, health routes, and the isolated fetcher. API executes on the host as directed. Fetcher probing and isolation have been verified; a current-code API response including TLS data and its persisted GET round-trip remain unverified.
-- [~] T0.4 Compose has `pgvector/pgvector:pg16`, vector init SQL, async pool, migration runner, and report/cache/usage schema. The PostgreSQL integration test has passed against the disposable `trustlens_test` database. The current-code API report persistence/GET flow and production-database expiry/counters/cache behavior remain unverified.
-- [~] T0.5 Compose has Redis 7, password, persistence, and a dedicated bridge attached only to PostgreSQL/Redis; loopback ports serve the host-run API. The fetcher is not attached. `internal: true` was removed because it prevented effective host-published ports. A real URLhaus import succeeded (167,217 records: 111,995 active, 55,222 historical), application lookups verified active confirmation and historical non-confirmation, and rebuilt-image probes confirmed PostgreSQL/Redis destinations are blocked. Import idempotency and failed-live-import behavior remain unverified.
+- [~] T0.3 Wire `/api/v1/analyse/url`, health routes, and the isolated fetcher. API executes on the host as directed. A live HTTPS API response included TLS data and its report ID successfully retrieved the persisted TLS report.
+- [~] T0.4 Compose has `pgvector/pgvector:pg16`, vector init SQL, async pool, migration runner, and report/cache/usage schema. Gate 0 passed against disposable `trustlens_test`; production-database expiry/counters/cache behavior remain unverified.
+- [~] T0.5 Compose has Redis 7, password, persistence, and a dedicated bridge attached only to PostgreSQL/Redis; loopback ports serve the host-run API. The fetcher is not attached. `internal: true` was removed because it prevented effective host-published ports. A real URLhaus import succeeded (167,217 records: 111,995 active, 55,222 historical), application lookups verified active confirmation and historical non-confirmation, and rebuilt-image probes confirmed PostgreSQL/Redis destinations are blocked. Fakeredis verifies idempotent reruns and preservation of the old generation when import/switch fails; the live imported feed was not rerun.
 
 ## Phase 1 — Models, check framework, URL normalization
 
@@ -48,17 +48,17 @@ Source of requirements: the user-supplied Module 1 implementation plan (not comm
 
 - [~] T4.1 DNS check queries A/AAAA/MX/NS/TXT and handles NXDOMAIN/timeouts. Deterministic DNS fixtures and final-target reuse tests are outstanding.
 - [~] T4.2 RDAP uses IANA bootstrap cache and registration age bands. Deterministic bootstrap/date/unavailable tests and runtime cache checks are outstanding.
-- [~] T4.3 PostgreSQL code implements migrations, JSONB report storage, report retrieval, hashed cache keys/TTL, atomic daily usage, and retention purge. A disposable PostgreSQL integration suite exists but was skipped because `TEST_DATABASE_URL` is unset; the running DB lacks tables; acceptance remains incomplete.
+- [~] T4.3 PostgreSQL code implements migrations, JSONB report storage, report retrieval, hashed cache keys/TTL, atomic daily usage, and retention purge. Gate 0's HTTPS analysis POST/GET TLS report round-trip passed against the disposable `_test` database; production-database expiry/counters/cache behavior remain unverified.
 - [~] T4.4 Safe Browsing v4 batches up to 50 URLs, caches hits/cleans, rate-limits, and sanitizes errors. Only a mocked match test exists; clean/cache-hit/status/quota fixtures and official test URL are outstanding.
 - [~] T4.5 VirusTotal URL and registered-domain lookups, GSB engine exclusion, cache, per-minute/daily quotas, 404/429 handling, and partial findings are implemented. Full 0/3/8, domain cap, retry/error/quota and target coverage fixtures are outstanding.
 - [~] T4.6 Request option skips Safe Browsing and VirusTotal while URLhaus remains registered/runnable. Explicit check-status assertions for skip behavior are incomplete.
-- [~] T4.7 Manual streaming importer supports comment-prefixed headerless URLhaus dumps, headered CSV, quoted values, FTP IOCs, malformed/conflicting duplicate rejection, identical duplicates, active/historical partitions, staging cleanup and generation pointer switching. Fakeredis tests pass. Real import succeeded with 167,217 records and application lookups verified active confirmation versus historical non-confirmation; real rerun idempotency and failed-live-import behavior remain unverified.
+- [~] T4.7 Manual streaming importer supports comment-prefixed headerless URLhaus dumps, headered CSV, quoted values, FTP IOCs, malformed/conflicting duplicate rejection, identical duplicates, active/historical partitions, staging cleanup and generation pointer switching. Fakeredis tests verify safe reruns and failed imports preserving the active pointer. A real import succeeded with 167,217 records and active/historical lookups were verified; real-feed rerun/failure behavior remains unverified.
 
 ## Phase 5 — Risk engine and API
 
 - [~] T5.1 Risk rules implement the finalized confirmation, High, Suspicious, Low/Inconclusive, URLhaus historical/active, VirusTotal domain cap, confidence, group, and target behavior. Unit/property tests cover key boundaries and independent-group monotonicity; complete section 16.7 cases remain.
 - [~] T5.2 Risk reasoning and per-class recommendation text exist. Recommendation/limitation wording and reputation-skipped/incomplete-chain cases are not fully exercised.
-- [~] T5.3 POST analysis validates URLs and returns eleven checks (ten original checks plus TLS); GET report retrieval, clean 400s, rate limiting, CORS and `/healthz` handling are wired. A user-provided current-server POST returned 200, but its response body did not establish TLS inclusion and a current report's PostgreSQL GET round-trip remains unverified.
+- [~] T5.3 POST analysis validates URLs and returns eleven checks (ten original checks plus TLS); GET report retrieval, clean 400s, rate limiting, CORS and `/healthz` handling are wired. A live HTTPS POST returned `tls_reports`, and GET by report ID returned the saved TLS report from disposable PostgreSQL. Production database behavior remains unverified.
 
 ## Phase 6 — Deployment hardening
 
@@ -75,11 +75,11 @@ Source of requirements: the user-supplied Module 1 implementation plan (not comm
 
 ## Latest verification
 
-- Latest recorded full suite: **472 passed, 1 skipped, 2 warnings**. The skipped test was PostgreSQL integration in that run because `TEST_DATABASE_URL` was unset; the warning types were Starlette's TestClient deprecation and a certifi certificate parsing warning. The PostgreSQL integration test was separately run against the configured disposable `_test` database and passed.
+- Latest full suite with `TEST_DATABASE_URL` set to the disposable `trustlens_test` database: **527 passed, 2 warnings** (`python -m pytest -q -p no:cacheprovider`). This includes all 12 PostgreSQL integration tests. Remaining warnings are Starlette/httpx and synthetic cryptography certificate deprecations.
 - `uv run python -m compileall -q src fetcher scripts run.py` passed.
-- `uv run python scripts/build_test_results.py` passed; it generated offline results for 5 benign and 40 adversarial entries.
+- `uv run python scripts/build_test_results.py` passed; it generated offline results for 5 benign and 40 adversarial entries. `python scripts/benchmark_fast_screen.py` measured 45 warm URLs on loopback Redis at 5 ms p95 (50 ms limit).
 - `docker compose config --quiet` passed. The latest fetcher image was rebuilt and recreated; the `fetcher/tls_probe.py` and `fetcher/models.py` hashes match the workspace. Rebuilt-image isolation checks passed for UID 10001, zero effective capabilities, absent Docker socket, DNS, blocked private/metadata/database/Redis/IPv6 egress, and loopback health.
-- PostgreSQL and Redis are healthy with loopback-published ports. URLhaus import and active/historical lookups were verified. The user provided logs of a current API POST returning 200, but those logs do not include the response body; the current report's `tls_reports` field and GET-by-ID round-trip have not been verified.
+- PostgreSQL, Redis, and fetcher endpoints were reachable locally. A live HTTPS API POST returned a TLS report and GET-by-ID confirmed PostgreSQL persistence. URLhaus import and active/historical lookups were verified.
 
 ## Architecture reconciliation
 
@@ -87,7 +87,7 @@ The finalized guide describes a Compose API container plus a separately isolated
 
 ## Remaining acceptance blockers
 
-1. Verify a current-code API POST response includes all eleven checks and `tls_reports`, then GET its report ID to confirm PostgreSQL persistence.
+1. Gate 0 TLS persistence is verified on the disposable database; verify the same retention, cache, and counter behavior against the deployment database.
 2. Add the complete redirect/response-limit security suite and finish all Module 1 input/hop/final-target coverage and section 16.7 risk cases.
 3. Complete provider fixtures, benign-corpus verification and human false-positive/evasion review.
 4. Verify and expand the benign corpus to 40 entries; complete human FP/evasion dispositions and the manual red-team review from `tests/RESULTS.md`. Dashboard remains blocked on frontend location.
@@ -104,7 +104,7 @@ The finalized guide describes a Compose API container plus a separately isolated
 - [x] Module 2 tests cover authority and wire-copy identity, 11/10 check gates, verdict catch-all, wildcard behavior, six-hour lifetime overage, report immutability/round-trip, response bounds, socket byte cap, local TLS handshake, OCSP good/revoked/unknown/tampered/wrong-issuer/SHA-256 CertID/freshness, SCT structure, non-default port scope, and distrust fingerprint rejection.
 - [x] Live `/probe/tls` diagnostics against `example.com`, `google.com`, `github.com`, and `wikipedia.org` show before/after chain statuses: `incomplete_chain` → `valid_trusted`, `incomplete_chain` → `valid_trusted`, `valid_trusted` → `valid_trusted`, and `valid_trusted` → `valid_trusted`. Full certificate/path output is in `scripts/diagnose_chain_output.txt`.
 - [x] PostgreSQL integration ran with the configured `trustlens_test` database and passed (1 test); the Windows-only test connection aliases `localhost` to the published IPv4 loopback while keeping application configuration unchanged.
-- [x] Latest recorded full suite: 472 passed, 1 skipped, 2 warnings; the PostgreSQL integration test was separately run against the configured `_test` database and passed. `compileall` passed.
+- [x] Latest review full suite: 489 passed, 1 skipped, 2 warnings. The PostgreSQL integration test was separately run against the configured `_test` database and passed in the earlier recorded verification. `compileall` passed.
 - [x] Rebuilt and force-recreated the fetcher image from the current working tree (image manifest `sha256:ea1028954156ddce8fe009d65cd79b23eaf14f165e10a97b01dbddf22cbf41f3`). The image's `fetcher/tls_probe.py` and `fetcher/models.py` hashes match the workspace: `0488a95d942777ec728ae68bdded99481763946f741e6516a13851679c44ba44` and `90b13f48c7aa83cb114153c680c31065473f7010a9ffeca2e22f23e580d12fbb`.
 - [x] Isolation recheck passed against that rebuilt image: PID 1 UID 10001; `CapEff=0`; Docker socket absent; Docker DNS working; connections to `10.0.0.1:443`, `169.254.169.254:80`, PostgreSQL `172.22.0.2:5432`, and Redis `172.22.0.3:6379` blocked; IPv6 egress blocked; loopback `/healthz` returned 200. The Bash script could not run because WSL/Bash is unavailable, so the same checks ran directly through PowerShell and `docker compose exec`.
 - [x] Added a Mozilla-documented compromised eMudhra intermediate (CCADB A012302); the committed PEM fingerprint was independently matched to Mozilla's incident record and the CT archive.
@@ -139,3 +139,20 @@ The finalized guide describes a Compose API container plus a separately isolated
 - `TLS_PROBE_TIMEOUT_BUDGET` is read directly from the environment; the spec's `<= 8.0` config validator is absent. Values above 8 still end at the runner's 10 s timeout.
 - Hash-policy anchor classification still treats only a self-issued terminal certificate as an anchor; an old SHA-1 cross-signature can therefore produce a `legacy_hash` false positive, which raises rather than lowers the verdict. This is separate from the fixed trust-path cross-sign anchoring.
 - The Module 5 HSTS consumer contract test cannot run because Module 5 is absent.
+
+## Monitoring v1.4 — implementation status (2026-11-09)
+
+- [x] Added migrations `002_monitoring.sql` through `004_ct_poll_cursor.sql` for API keys, watches, lookalike state, issuer baselines, alerts, worker state, CT deduplication, wildcard status, and fallback polling cursor.
+- [x] Added hashed API-key authentication, key creation CLI, watch CRUD with IDNA/eTLD+1 validation and a 20-watch owner quota, tenant-scoped alert listing/acknowledgment/dismissal, and tenant-scoped status counts.
+- [x] Added the unauthenticated `POST /api/v1/screen/url` local fast path with `full` and `host_only` modes. Full mode checks exact URL and host URLhaus indicators; host-only mode checks host indicators without querying a URL-specific key. Neither mode persists the submitted URL, and no local signal returns `no_local_signals` with low confidence.
+- [x] Added the Chrome extension origin pattern and `X-API-Key` CORS header, and declared `websockets>=17.4` directly in project dependencies.
+- [x] Monitoring routes apply the IP tier before authentication and a 60/minute per-key tier after key validation. Redis shares the per-key counter across processes; an in-process fallback keeps authenticated monitoring available when Redis is down.
+- [x] Added a standalone Windows-Selector worker with advisory lock `948201`, 15-second lock heartbeat, independent task loops, health state, and daily retention cleanup.
+- [x] Added deterministic candidate generation (500 cap), dual unfiltered DNS probes, wildcard guard, MX/RDAP gating, silent baselines, transition alerts, and candidate state persistence.
+- [x] Added strict CA manifest validation, a verification CLI, certificate/SPKI fingerprints in new TLS reports, live distrust alert hook, version-triggered retro-scan, and throttled active re-probes.
+- [x] Added live/replay CT source abstraction, bounded and sanitized certificate processing, candidate pre-filter/matching rules, crt.sh baseline retries and issuer normalization, rule-1 polling fallback, and per-watch deduplication.
+- [~] Added proof tests for fast-screen performance/verdicts/privacy mode, pre-auth IP and per-key limiting, CORS, API-key hashing, tenant isolation, watch IDNA/quota/CRUD, alert lifecycle/issuer trust, lookalike first-scan silence/transition/wildcard behavior, dual DNS fallback, CT baseline/issuer/poller behavior, advisory-lock exclusivity, CA live/retro scans and re-probe throttling, candidate generation, and worker cancellation. Tests exposed and fixed the pre-auth IP limiter, CT issuer-DN parsing, and combosquat severity ordering. The complete v1.4 T1–T46 matrix is still incomplete; live Certstream, public DNS, crt.sh, and active fetcher re-probes remain unverified. Alert-title wording is a frontend check and that frontend is not in this repository.
+- [~] Retro-scan cannot fingerprint reports saved before `fingerprint_sha256` and `spki_sha256` were added; those older persisted reports lack the required certificate identifiers.
+- [x] Gate 0 live HTTPS `tls_reports` PostgreSQL round-trip passed; integration test: `test_gate0_analysis_post_get_round_trips_tls_reports`.
+- [~] The v1.4 proof-test matrix is partially covered by unit and PostgreSQL integration tests; the complete T1–T46 matrix has not been added or run.
+- Verification performed: full suite 527 passed with all 12 PostgreSQL integration tests enabled; fast-screen benchmark p95 5 ms; offline corpus generation completed (5 benign, 40 adversarial); `git diff --check` and compileall passed.

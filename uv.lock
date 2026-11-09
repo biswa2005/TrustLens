@@ -1425,6 +1425,7 @@ dependencies = [
     { name = "slowapi" },
     { name = "tldextract" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "websockets" },
 ]
 
 [package.dev-dependencies]
@@ -1455,6 +1456,7 @@ requires-dist = [
     { name = "slowapi", specifier = ">=0.1.9" },
     { name = "tldextract", specifier = ">=5.1" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },
+    { name = "websockets", specifier = ">=17.4" },
 ]
 
 [package.metadata.requires-dev]

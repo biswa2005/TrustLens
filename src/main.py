@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="TrustLens", version="0.1.0", lifespan=lifespan)
 origins=[x.strip() for x in __import__("os").environ.get("CORS_ALLOW_ORIGINS","http://localhost:3000").split(",") if x.strip()]
-app.add_middleware(CORSMiddleware,allow_origins=origins,allow_methods=["GET","POST"],allow_headers=["Content-Type"],allow_credentials=False)
+app.add_middleware(CORSMiddleware,allow_origins=origins,allow_origin_regex=r"chrome-extension://[a-z]{32}",allow_methods=["GET","POST","DELETE"],allow_headers=["Content-Type","X-API-Key"],allow_credentials=False)
 app.state.limiter=limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
@@ -50,6 +50,12 @@ app.add_exception_handler(RateLimitExceeded,_rate_limit_exceeded_handler)
 async def validation_error_handler(request,exc):
     return JSONResponse(status_code=400,content={"detail":"Invalid analysis request"})
 app.include_router(router)
+from links.routes_watch import router as watch_router
+from links.routes_alert import router as alert_router
+from links.routes_status import router as status_router
+app.include_router(watch_router)
+app.include_router(alert_router)
+app.include_router(status_router)
 
 
 @app.get("/")

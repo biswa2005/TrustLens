@@ -8,11 +8,12 @@ from links.services.registry import Context
 REAL_ASYNC_CLIENT=httpx.AsyncClient
 
 def run_redirect(monkeypatch,start,hops,errors=None,complete=True):
-    payload={"hops":hops,"chain_complete":complete,"errors":errors or [],"html_by_hop":[]}
+    payload={"hops":hops,"chain_complete":complete,"errors":errors or [],"password_forms_by_hop":[]}
     def factory(*args,**kwargs):
         return REAL_ASYNC_CLIENT(transport=httpx.MockTransport(lambda req:httpx.Response(200,json=payload)),*args,**kwargs)
     monkeypatch.setattr(analyser.httpx,"AsyncClient",factory)
     monkeypatch.setenv("FETCHER_URL","http://fetcher.test")
+    monkeypatch.setenv("FETCHER_TOKEN","test-token")
     ctx=Context(start,nurl=normalize(start))
     findings=asyncio.run(analyser.check_redirect(ctx))
     return findings,ctx.fetch_result

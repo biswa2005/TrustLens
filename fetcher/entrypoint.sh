@@ -9,5 +9,8 @@ iptables -I OUTPUT 2 -d 127.0.0.11 -j ACCEPT
 iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 for net in 0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.0.0.0/24 192.0.2.0/24 192.88.99.0/24 192.168.0.0/16 198.18.0.0/15 198.51.100.0/24 203.0.113.0/24 224.0.0.0/4 240.0.0.0/4 255.255.255.255/32; do iptables -A OUTPUT -d "$net" -j DROP; done
 iptables -A OUTPUT -p tcp -m multiport --dports 80,443 -j ACCEPT
-ip6tables -P OUTPUT DROP || true
-exec setpriv --reuid=fetcher --regid=fetcher --clear-groups --bounding-set=-net_admin --inh-caps=-net_admin --ambient-caps=-net_admin uvicorn fetcher.app:app --host 0.0.0.0 --port 8001
+# Fail startup if IPv6 egress cannot be disabled. Keep replies for inbound
+# requests, while blocking every new outbound IPv6 connection.
+ip6tables -P OUTPUT DROP
+ip6tables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+exec setpriv --reuid=fetcher --regid=fetcher --clear-groups --bounding-set=-net_admin --inh-caps=-net_admin --ambient-caps=-net_admin uvicorn fetcher.app:app --host 0.0.0.0 --port 8001 --limit-concurrency 32

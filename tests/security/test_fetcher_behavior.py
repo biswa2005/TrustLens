@@ -1,7 +1,14 @@
+import asyncio
 from fastapi.testclient import TestClient
 import pytest
 import fetcher.app as service
 from fetcher.guard import Blocked
+
+AUTH_HEADERS={"X-Fetcher-Token":"test-token"}
+
+@pytest.fixture(autouse=True)
+def configure_fetcher_token(monkeypatch):
+    monkeypatch.setenv("FETCHER_TOKEN","test-token")
 
 class FakeSocket:
     def __init__(self): self.sent=b''; self.closed=False
@@ -14,6 +21,27 @@ class FakeResponse:
     def getheaders(self): return [('Content-Type','text/html; charset=utf-8')]
     status=200
     def read(self,n): return b'x'*(n)
+
+def test_fetch_requires_shared_token():
+    with TestClient(service.app) as client:
+        response=client.post('/fetch',json={'url':'https://public.example'})
+    assert response.status_code==401
+
+def test_fetch_returns_429_when_concurrency_limit_is_full(monkeypatch):
+    monkeypatch.setattr(service,'_fetch_sem',asyncio.Semaphore(0))
+    with TestClient(service.app) as client:
+        response=client.post('/fetch',json={'url':'https://public.example'},headers=AUTH_HEADERS)
+    assert response.status_code==429
+
+def test_password_form_evidence_is_bounded():
+    actions,truncated=service._password_form_evidence(
+        '<form action="/x"><input type="password"></form>'*(service.MAX_FORMS_PER_PAGE+1)
+    )
+    assert len(actions)==service.MAX_FORMS_PER_PAGE and truncated
+    actions,truncated=service._password_form_evidence(
+        '<form action="/'+('x'*service.MAX_FORM_ACTION_LENGTH)+'"><input type="password"></form>'
+    )
+    assert actions==[] and truncated
 
 def test_request_uses_validated_ip_and_original_tls_name(monkeypatch):
     made=[]; tls=[]; fake=FakeSocket()
@@ -38,7 +66,7 @@ def test_fetcher_records_redirect_to_blocked_private_host(monkeypatch):
     async def resolve(url,timeout=3): return (__import__('urllib.parse').parse.urlsplit(url),443,'8.8.8.8')
     monkeypatch.setattr(service,'validate_and_resolve_async',resolve)
     with TestClient(service.app) as client:
-        response=client.post('/fetch',json={'url':'https://public.example'})
+        response=client.post('/fetch',json={'url':'https://public.example'},headers=AUTH_HEADERS)
     data=response.json()
     assert response.status_code==200 and len(data['hops'])==2
     assert data['hops'][1]['blocked_reason']=='private_ip'
@@ -48,14 +76,15 @@ def test_fetcher_retains_html_from_intermediate_redirect(monkeypatch):
     calls=0
     def request(url,deadline=None,resolved=None):
         nonlocal calls; calls+=1
-        if calls==1: return {'status':302,'headers':{'location':'https://final.example/'},'body':'<form><input type="password"></form>','truncated':False,'ip':'8.8.8.8','elapsed_ms':1}
+        if calls==1: return {'status':302,'headers':{'location':'https://final.example/'},'body':'<form action="https://capture.evil.com/post"><input type="password"></form>','truncated':False,'ip':'8.8.8.8','elapsed_ms':1}
         return {'status':200,'headers':{'content-type':'text/html'},'body':'<p>final</p>','truncated':False,'ip':'8.8.4.4','elapsed_ms':1}
     monkeypatch.setattr(service,'request_one',request)
     async def resolve(url,timeout=3): return (__import__('urllib.parse').parse.urlsplit(url),443,'8.8.8.8')
     monkeypatch.setattr(service,'validate_and_resolve_async',resolve)
-    with TestClient(service.app) as client: data=client.post('/fetch',json={'url':'https://start.example'}).json()
-    assert data['chain_complete'] and len(data['html_by_hop'])==2
-    assert 'password' in data['html_by_hop'][0]['html']
+    with TestClient(service.app) as client: data=client.post('/fetch',json={'url':'https://start.example'},headers=AUTH_HEADERS).json()
+    assert data['chain_complete'] and len(data['password_forms_by_hop'])==2
+    assert data['password_forms_by_hop'][0]['password_form_actions']==['https://capture.evil.com/post']
+    assert 'html_by_hop' not in data and 'final_html' not in data
 
 @pytest.mark.parametrize(('headers','body','expected'),[
     ({'refresh':'0; url=https://final.example/'},'', 'refresh_header'),
@@ -71,7 +100,7 @@ def test_fetcher_follows_static_redirect_forms(monkeypatch,headers,body,expected
     monkeypatch.setattr(service,'request_one',request)
     async def resolve(url,timeout=3): return (__import__('urllib.parse').parse.urlsplit(url),443,'8.8.8.8')
     monkeypatch.setattr(service,'validate_and_resolve_async',resolve)
-    with TestClient(service.app) as client: data=client.post('/fetch',json={'url':'https://start.example'}).json()
+    with TestClient(service.app) as client: data=client.post('/fetch',json={'url':'https://start.example'},headers=AUTH_HEADERS).json()
     assert data['chain_complete'] and data['hops'][0]['via']==expected
     assert calls[1]=='https://final.example/'
 
@@ -80,14 +109,14 @@ def test_fetcher_records_certificate_failure_without_disabling_tls(monkeypatch):
     monkeypatch.setattr(service,'request_one',lambda *a,**k: (_ for _ in ()).throw(ssl.SSLError('certificate verify failed')))
     async def resolve(url,timeout=3): return (__import__('urllib.parse').parse.urlsplit(url),443,'8.8.8.8')
     monkeypatch.setattr(service,'validate_and_resolve_async',resolve)
-    with TestClient(service.app) as client: data=client.post('/fetch',json={'url':'https://start.example'}).json()
+    with TestClient(service.app) as client: data=client.post('/fetch',json={'url':'https://start.example'},headers=AUTH_HEADERS).json()
     assert not data['chain_complete'] and data['hops'][0]['blocked_reason']=='tls_error:SSLError'
 
 def test_fetcher_rejects_oversized_location_without_echoing_it(monkeypatch):
     monkeypatch.setattr(service,'request_one',lambda *a,**k:{'status':302,'headers':{'location':'https://'+('a'*2100)},'body':'','truncated':False,'ip':'8.8.8.8','elapsed_ms':1})
     async def resolve(url,timeout=3): return (__import__('urllib.parse').parse.urlsplit(url),443,'8.8.8.8')
     monkeypatch.setattr(service,'validate_and_resolve_async',resolve)
-    with TestClient(service.app) as client: data=client.post('/fetch',json={'url':'https://start.example'}).json()
+    with TestClient(service.app) as client: data=client.post('/fetch',json={'url':'https://start.example'},headers=AUTH_HEADERS).json()
     assert not data['chain_complete'] and data['hops'][0]['location'] is None
     assert data['hops'][0]['location_too_long'] and 'location_too_long' in data['errors']
 
@@ -96,7 +125,7 @@ def test_fetcher_stops_at_hop_limit(monkeypatch):
     monkeypatch.setattr(service,'request_one',lambda url,deadline=None,resolved=None:{'status':302,'headers':{'location':'https://next.example/'+str(len(url))},'body':'','truncated':False,'ip':'8.8.8.8','elapsed_ms':1})
     async def resolve(url,timeout=3): return (__import__('urllib.parse').parse.urlsplit(url),443,'8.8.8.8')
     monkeypatch.setattr(service,'validate_and_resolve_async',resolve)
-    with TestClient(service.app) as client: data=client.post('/fetch',json={'url':'https://start.example'}).json()
+    with TestClient(service.app) as client: data=client.post('/fetch',json={'url':'https://start.example'},headers=AUTH_HEADERS).json()
     assert not data['chain_complete'] and len(data['hops'])==2 and 'excessive_hops' in data['errors']
 
 

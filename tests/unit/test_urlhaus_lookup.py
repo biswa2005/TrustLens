@@ -27,6 +27,24 @@ def test_redis_check_miss_is_ok_not_clean_evidence(monkeypatch):
     status,findings,_=asyncio.run(urlhaus.run('https://clean.test/'))
     assert status=='ok' and findings==[]
 
+def test_host_only_lookup_queries_host_iocs_without_exact_url(monkeypatch, tmp_path):
+    feed=tmp_path/'u.csv'; write_feed(feed,[('a','https://mal.test/a','online')])
+    store=fakeredis.FakeRedis(decode_responses=True); import_file(feed,store)
+    monkeypatch.setattr(redis_store,'client',lambda:store)
+    records=asyncio.run(redis_store.lookup_host('mal.test'))
+    assert len(records)==1 and records[0]['matched_value_type']=='host'
+
+def test_host_only_screen_uses_host_lookup(monkeypatch):
+    calls=[]
+    async def host_lookup(host):
+        calls.append(host)
+        return []
+    monkeypatch.setattr(redis_store,'lookup_host',host_lookup)
+    result=asyncio.run(analyser.screen_url('https://clean.test/path?secret=value','host_only'))
+    assert calls==['clean.test']
+    assert result['coverage']['checks'][3]['check_id']=='intel_urlhaus'
+    assert result['coverage']['checks'][3]['status']=='ok'
+
 def test_redis_unavailable_is_unavailable(monkeypatch):
     def fail(): raise ConnectionError('offline')
     monkeypatch.setattr(redis_store,'client',fail)

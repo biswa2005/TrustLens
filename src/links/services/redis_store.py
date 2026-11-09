@@ -23,16 +23,24 @@ async def close():
 async def _await(value):
     return await value if inspect.isawaitable(value) else value
 
-async def lookup(url: str) -> list[dict]:
+async def _lookup_values(values_to_check: tuple[tuple[str, str], ...]) -> list[dict]:
     r=client(); generation=r.get("urlhaus:v1:active_generation")
     generation=await _await(generation)
     if not generation: raise RuntimeError("URLhaus feed generation is unavailable")
-    host=urlsplit(url).hostname
     result=[]
     for kind in ("active","historical"):
-        for typ,value in (("url",url),("host",host or "")):
+        for typ,value in values_to_check:
             digest=hashlib.sha256(value.encode()).hexdigest()
             values=await _await(r.hvals(f"urlhaus:v1:{generation}:{kind}:{typ}:{digest}"))
             result.extend({**json.loads(v),"matched_value_type":typ,"record_status":kind} for v in values)
     unique={str(x.get("id")):x for x in result}
     return list(unique.values())
+
+async def lookup(url: str) -> list[dict]:
+    host=urlsplit(url).hostname
+    return await _lookup_values((("url",url),("host",host or "")))
+
+async def lookup_host(host: str) -> list[dict]:
+    """Look up host IOCs without querying a URL-specific Redis key."""
+    normalized=urlsplit("//" + host).hostname or ""
+    return await _lookup_values((("host",normalized),))

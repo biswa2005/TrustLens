@@ -73,6 +73,8 @@ class CertificateDetails(BaseModel):
     subject: str
     issuer: str
     serial_number: str
+    fingerprint_sha256: str | None = None
+    spki_sha256: str | None = None
     not_before: datetime
     not_after: datetime
     san_dns: tuple[str, ...] = ()

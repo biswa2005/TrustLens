@@ -7,6 +7,7 @@ __pycache__/
 *.pyd
 *.egg-info/
 .pytest_cache/
+tests/.tmp/
 .hypothesis/
 tests/**/scratch-*/
 tests/.pytest-temp/
@@ -38,5 +39,4 @@ Thumbs.db
 # Local
 uv.lock.bak
 sync.out
-x
 run.out
