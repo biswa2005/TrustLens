@@ -225,7 +225,7 @@ Brand referenced: {brand or context.get('brand') or 'none'}
 Verdict: {risk.verdict.value}
 Risk score: {risk.score}/100
 Severity: {risk.severity.value}
-Risk factors: {[{'label': f['label'], 'weight': f['weight'], 'reason': f['reason']} for f in risk.factors[:12]]}
+Risk factors: {[{'label': f.label, 'weight': f.weight, 'reason': f.reason} for f in risk.factors[:12]]}
 Findings: {[{'title': f.get('title'), 'severity': f.get('severity'), 'evidence_ids': f.get('evidence_ids'), 'description': truncate(str(f.get('description')), 500)} for f in findings[:12]]}
 Evidence: {evidence_digest[:25]}
 Context: {context}

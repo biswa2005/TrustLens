@@ -1,5 +1,6 @@
 # Environment / Python
 .venv/
+.venv*/
 .uv-cache/
 __pycache__/
 *.py[cod]
@@ -32,13 +33,24 @@ build/
 # Local DB
 trustlens*.db
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
 !.gitkeep
 
-# Node
+# Node / web
+node_modules/
 contracts/node_modules/
 contracts/cache/
 frontend/node_modules/
 frontend/dist/
+frontend/build/
+frontend/.vite/
+web/node_modules/
+web/dist/
+web/build/
+web/.vite/
+web/*.tsbuildinfo
 
 # Misc
 .idea/
@@ -46,8 +58,13 @@ frontend/dist/
 .DS_Store
 Thumbs.db
 
-# Local
+# Local / generated output
+.python-version
 uv.lock.bak
 sync.out
+err.txt
+out.txt
+tsc.out
+*.out
 x
 run.out

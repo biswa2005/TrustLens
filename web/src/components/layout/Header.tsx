@@ -14,6 +14,8 @@ const NAV = [
     id: "registry",
     badge: "WEB3",
   },
+  { label: "Investigate", to: { pathname: "/investigate" }, id: "investigate" },
+  { label: "History", to: { pathname: "/investigations" }, id: "investigations" },
   { label: "About Us", to: { pathname: "/about" }, id: "about" },
 ] as const;
 

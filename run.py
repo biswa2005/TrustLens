@@ -8,7 +8,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 def main():
     from links.services.runtime import run_uvicorn
-    run_uvicorn("main:app", host="0.0.0.0", port=8000)
+    run_uvicorn("app.main:app", host="0.0.0.0", port=8000)
 
 
 if __name__ == "__main__":

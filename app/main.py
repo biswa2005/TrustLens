@@ -76,6 +76,18 @@ def create_app(
     app.include_router(api_router, prefix=resolved.api_prefix)
     app.include_router(health_router)
 
+    # Optional dev-branch URL-trust analysis service.
+    try:
+        import sys
+        from pathlib import Path
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+        from links.routes import router as links_router
+
+        app.include_router(links_router)
+    except Exception as exc:  # pragma: no cover
+        logger.warning("URL-trust analysis service unavailable: %s", exc)
+
     @app.get("/", include_in_schema=False)
     async def root() -> RedirectResponse:
         return RedirectResponse(url="/docs")
